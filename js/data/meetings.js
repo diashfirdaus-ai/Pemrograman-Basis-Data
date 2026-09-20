@@ -295,80 +295,647 @@ USE perkuliahan_itenas;`,
   {
     id: 2,
     title: 'Database Design & ERD',
-    subtitle: 'Entity, Attribute, Relationship, Primary Key, Foreign Key & Cardinality',
+    subtitle: 'Entity-Relationship Model, Klasifikasi Atribut, Kardinalitas Crow\'s Foot, Kunci Relasional, & Pemetaan Skema',
     duration: '150 Menit',
     objectives: [
-      'Mengidentifikasi entitas dan atribut dalam suatu sistem nyata',
-      'Memahami peranan Primary Key (PK) dan Foreign Key (FK)',
-      'Memahami derajat relasi dan kardinalitas (1:1, 1:N, M:N)',
-      'Membuat Entity Relationship Diagram (ERD) sesuai standar konseptual & logikal'
+      'Memahami 3 fase siklus perancangan basis data: Konseptual (ERD), Logikal (Relational Schema), dan Fisikal (DDL/DBMS)',
+      'Mengidentifikasi komponen ERD: Entitas Kuat (Strong Entity) vs Entitas Lemah (Weak Entity)',
+      'Mengklasifikasikan taksonomi atribut: Simple vs Composite, Single-valued vs Multi-valued, Stored vs Derived',
+      'Menganalisis tingkatan kunci relasional: Super Key, Candidate Key, Primary Key (PK), Alternate Key, dan Foreign Key (FK)',
+      'Menerapkan derajat kardinalitas (1:1, 1:N, M:N) serta batasan partisipasi (Mandatory vs Optional) menggunakan notasi Crow\'s Foot',
+      'Mentransformasikan diagram ERD menjadi skema tabel relasional lengkap dengan junction table dan integritas referensial'
     ],
     content: `
-      <h3>1. Komponen Utama ERD</h3>
-      <ul>
-        <li><strong>Entity (Entitas):</strong> Objek di dunia nyata yang informasinya ingin dicatat dalam sistem (misal: <em>Mahasiswa</em>, <em>Dosen</em>, <em>Mata Kuliah</em>).</li>
-        <li><strong>Attribute (Atribut):</strong> Karakteristik atau sifat yang mendeskripsikan entitas (misal: NIM, Nama, SKS).</li>
-        <li><strong>Relationship (Relasi):</strong> Keterhubungan logis antara dua atau lebih entitas (misal: Mahasiswa <em>mengambil</em> Mata Kuliah).</li>
+      <div class="alert-box info" style="background: var(--primary-subtle); color: var(--text-900); padding: 20px 24px; border-radius: var(--r-lg); border: 1px solid var(--primary-border); margin-bottom: 32px; display: flex; gap: 16px; align-items: flex-start;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2" style="flex-shrink:0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 4px;">Petunjuk Praktikum: Modul 02 — Database Design & ERD</div>
+          <div style="font-size: 0.95rem; color: var(--text-600); line-height: 1.65;">Modul ini memandu mahasiswa memahami siklus perancangan basis data sebelum menulis kode SQL fisik: memodelkan entitas di dunia nyata kampus ITENAS, membedakan entitas kuat vs lemah, mengidentifikasi taksonomi atribut, menentukan Primary Key & Foreign Key, memetakan kardinalitas notasi Crow's Foot, dan mentransformasikan ERD menjadi skema relasional yang siap diimplementasikan.</div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 36px; margin-bottom: 18px;">1. Siklus Hidup & 3 Fase Perancangan Basis Data</h3>
+      <p style="margin-bottom: 20px; color: var(--text-600); line-height: 1.75; font-size: 0.975rem;">
+        Perancangan basis data (*database design*) adalah proses penyusunan struktur data terorganisir untuk mendukung operasional sistem informasi. Kegagalan merancang skema di tahap awal dapat mengakibatkan redundansi data masif, anomali operasi, dan performa aplikasi yang buruk. Standar rekayasa perangkat lunak membagi proses ini ke dalam <strong>3 fase abstraksi bertahap (ANSI/SPARC)</strong>:
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 24px 0 32px 0;">
+        <div style="background: var(--bg-white); border: 1.5px solid var(--primary-border); border-radius: var(--r-xl); padding: 22px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="badge" style="background: var(--primary-subtle); color: var(--primary); font-weight: 800; padding: 4px 10px; border-radius: var(--r-full); font-size: 0.75rem; border: 1px solid var(--primary-border);">Fase 1: Konseptual</span>
+            <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-400);">DBMS-Independent</span>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 8px;">Conceptual Design (ERD)</h4>
+          <p style="font-size: 0.875rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            Memodelkan kebutuhan data tingkat tinggi dari sudut pandang bisnis pengguna. Mengidentifikasi entitas, relasi, dan kardinalitas tanpa memikirkan software DBMS yang akan digunakan. Output utama: <strong>Entity Relationship Diagram (ERD)</strong>.
+          </p>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1.5px solid rgba(8, 145, 178, 0.25); border-radius: var(--r-xl); padding: 22px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="badge" style="background: var(--accent-cyan-subtle); color: var(--accent-cyan); font-weight: 800; padding: 4px 10px; border-radius: var(--r-full); font-size: 0.75rem; border: 1px solid rgba(8, 145, 178, 0.3);">Fase 2: Logikal</span>
+            <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-400);">Relational Model</span>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 8px;">Logical Design (Schema)</h4>
+          <p style="font-size: 0.875rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            Mentransformasikan ERD menjadi struktur tabel relasional (baris & kolom), menentukan Primary Key, memetakan Foreign Key, serta menerapkan proses normalisasi (1NF, 2NF, 3NF) guna mencegah redundansi data.
+          </p>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1.5px solid rgba(147, 51, 234, 0.25); border-radius: var(--r-xl); padding: 22px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="badge" style="background: var(--purple-50); color: var(--purple-600); font-weight: 800; padding: 4px 10px; border-radius: var(--r-full); font-size: 0.75rem; border: 1px solid var(--purple-200);">Fase 3: Fisikal</span>
+            <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-400);">Target: MySQL Engine</span>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 8px;">Physical Design (DDL)</h4>
+          <p style="font-size: 0.875rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            Mengimplementasikan skema ke DBMS nyata (MySQL/PostgreSQL): menentukan tipe data fisik presisi (INT, VARCHAR, DECIMAL), alokasi memori, pembuatan B-Tree Index, storage engine (InnoDB), dan constraint integritas data.
+          </p>
+        </div>
+      </div>
+
+      <div style="background: var(--text-900); color: #38bdf8; padding: 24px 20px; border-radius: var(--r-xl); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; text-align: center; margin: 28px 0; box-shadow: var(--shadow-md); line-height: 1.8;">
+        <div style="color: #f8fafc; font-weight: 700;">[ 1. Kebutuhan Pengguna & Dokumen Skenario Sistem ]</div>
+        <div style="margin: 6px 0; color: #94a3b8;">↓ (Abstraksi Konseptual)</div>
+        <div style="color: #fb923c; font-weight: 800; font-size: 0.95rem;">[ 2. ERD: Entity, Attribute, Relationship, Cardinality ]</div>
+        <div style="margin: 6px 0; color: #94a3b8;">↓ (Aturan Transformasi Skema & Normalisasi)</div>
+        <div style="color: #38bdf8; font-weight: 800; font-size: 0.95rem;">[ 3. Skema Relasional: Tabel, Primary Key, Foreign Key ]</div>
+        <div style="margin: 6px 0; color: #94a3b8;">↓ (Eksekusi DDL & Storage Engine InnoDB)</div>
+        <div style="color: #4ade80; font-weight: 700;">[ 4. Database Fisik Aktif pada Server RDBMS ]</div>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 40px; margin-bottom: 18px;">2. Anatomi Komponen Utama ERD</h3>
+      <p style="margin-bottom: 20px; color: var(--text-600); line-height: 1.75; font-size: 0.975rem;">
+        ERD dikembangkan pertama kali oleh <strong>Peter Chen (1976)</strong> sebagai notasi visual grafis untuk memodelkan data konseptual. Tiga pilar utama pembentuk ERD meliputi:
+      </p>
+
+      <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 24px 0 12px 0;">A. Entitas: Strong Entity vs Weak Entity</h4>
+      <p style="margin-bottom: 16px; color: var(--text-600); line-height: 1.75; font-size: 0.95rem;">
+        <strong>Entitas (Entity)</strong> adalah objek dunia nyata yang keberadaannya dapat dibedakan dari objek lain dan informasinya perlu dicatat oleh sistem:
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div style="background: var(--bg-muted); border: 1px solid var(--border-base); border-left: 4px solid var(--primary); border-radius: var(--r-md); padding: 16px 20px;">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 4px; font-size: 0.95rem;">1. Entitas Kuat (Strong Entity / Regular)</div>
+          <div style="font-size: 0.875rem; color: var(--text-600); line-height: 1.6;">
+            Entitas yang keberadaannya mandiri (tidak bergantung pada entitas lain) dan memiliki Primary Key sendiri yang unik.<br>
+            <em>Contoh di ITENAS:</em> <code>MAHASISWA</code> (dengan PK NIM), <code>DOSEN</code> (dengan PK NIDN), <code>MATA_KULIAH</code> (dengan PK Kode MK).<br>
+            <strong>Simbol ERD:</strong> Persegi panjang tunggal (<em>single rectangle</em>).
+          </div>
+        </div>
+
+        <div style="background: var(--bg-muted); border: 1px solid var(--border-base); border-left: 4px solid var(--accent-cyan); border-radius: var(--r-md); padding: 16px 20px;">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 4px; font-size: 0.95rem;">2. Entitas Lemah (Weak Entity / Dependent)</div>
+          <div style="font-size: 0.875rem; color: var(--text-600); line-height: 1.6;">
+            Entitas yang keberadaannya bergantung mutlak pada entitas pemilik (*owner entity*). Tidak memiliki Primary Key sendiri, melainkan hanya <strong>Partial Key (Discriminator)</strong>.<br>
+            <em>Contoh:</em> <code>TANGGUNGAN_KELUARGA</code> (bergantung pada Dosen), <code>DETAIL_TRANSAKSI</code> (bergantung pada Faktur Induk).<br>
+            <strong>Simbol ERD:</strong> Persegi panjang ganda (<em>double rectangle</em>) dengan relasi pengidentifikasi berbentuk belah ketupat ganda.
+          </div>
+        </div>
+      </div>
+
+      <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 32px 0 12px 0;">B. Taksonomi Lengkap Atribut</h4>
+      <p style="margin-bottom: 20px; color: var(--text-600); line-height: 1.75; font-size: 0.95rem;">
+        <strong>Atribut (Attribute)</strong> adalah ciri atau properti yang mendeskripsikan suatu entitas. Setiap jenis atribut memiliki perlakuan berbeda saat ditransformasikan ke tabel database:
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 28px;">
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-xs);">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Klasifikasi 1: Kompleksitas</div>
+          <div style="font-weight: 800; color: var(--text-900); font-size: 1rem; margin-bottom: 6px;">Simple vs Composite</div>
+          <ul style="padding-left: 18px; font-size: 0.85rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            <li><strong>Simple (Atomic):</strong> Nilai data tunggal tak terbagi (misal: <code>jenis_kelamin</code>, <code>sks</code>, <code>semester</code>).</li>
+            <li><strong>Composite:</strong> Gabungan dari beberapa sub-atribut logis (misal: <code>alamat</code> dipecah menjadi <code>jalan</code>, <code>kota</code>, <code>kode_pos</code>). Pada skema relasional, <em>hanya sub-atribut yang dijadikan kolom fisik</em>.</li>
+          </ul>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-xs);">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Klasifikasi 2: Kardinalitas Nilai</div>
+          <div style="font-weight: 800; color: var(--text-900); font-size: 1rem; margin-bottom: 6px;">Single vs Multi-Valued</div>
+          <ul style="padding-left: 18px; font-size: 0.85rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            <li><strong>Single-Valued:</strong> Hanya menyimpan tepat satu nilai untuk setiap baris (misal: <code>tgl_lahir</code>, <code>nim</code>, <code>ipk</code>).</li>
+            <li><strong>Multi-Valued:</strong> Dapat bernilai lebih dari satu untuk satu entitas (misal: <code>nomor_hp</code>, <code>hobi</code>, <code>sertifikasi</code>). <em>Wajib dipecah ke tabel terpisah</em> dalam model relasional untuk memenuhi 1NF.</li>
+          </ul>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-xs);">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent-emerald); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Klasifikasi 3: Asal Usul Nilai</div>
+          <div style="font-weight: 800; color: var(--text-900); font-size: 1rem; margin-bottom: 6px;">Stored vs Derived (Turunan)</div>
+          <ul style="padding-left: 18px; font-size: 0.85rem; color: var(--text-600); line-height: 1.65; margin: 0;">
+            <li><strong>Stored:</strong> Disimpan fisik secara permanen di media disk (misal: <code>tgl_lahir</code>, <code>harga_satuan</code>, <code>qty</code>).</li>
+            <li><strong>Derived:</strong> Dihitung dinamis saat query (misal: <code>usia</code> dari <code>CURRENT_DATE - tgl_lahir</code>; <code>total_bayar</code> dari <code>harga * qty</code>). <em>Best practice:</em> Jangan disimpan fisik agar mencegah ketidaksinkronan data!</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 32px 0 12px 0;">C. Hierarki Kunci Relasional (Database Keys Hierarchy)</h4>
+      <p style="margin-bottom: 18px; color: var(--text-600); line-height: 1.75; font-size: 0.95rem;">
+        Kunci (*keys*) merupakan mekanisme utama RDBMS untuk menjamin integritas data dan memungkinkan relasi antar-tabel berjalan secara konsisten:
+      </p>
+
+      <div style="overflow-x: auto; margin-bottom: 36px; border: 1px solid var(--border-base); border-radius: var(--r-xl); box-shadow: var(--shadow-sm);">
+        <table class="table-sql" style="width: 100%; margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Tingkatan Kunci</th>
+              <th style="width: 38%;">Definisi & Karakteristik</th>
+              <th style="width: 40%;">Contoh Kasus Mahasiswa ITENAS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Super Key</strong></td>
+              <td>Kombinasi satu atau lebih atribut yang menjamin keunikan identifikasi setiap baris data (bisa memuat kolom ekstra yang sebenarnya tidak mutlak).</td>
+              <td><code>{nim}</code>, <code>{nim, nama}</code>, <code>{email, angkatan}</code></td>
+            </tr>
+            <tr>
+              <td><strong>Candidate Key</strong></td>
+              <td>Super Key yang bersifat <em>minimal</em> (tanpa atribut mubazir). Semua kandidat yang berpotensi diangkat menjadi Primary Key.</td>
+              <td>Kandidat 1: <code>{nim}</code><br>Kandidat 2: <code>{email_kampus}</code></td>
+            </tr>
+            <tr>
+              <td><strong style="color: var(--primary);">Primary Key (PK)</strong></td>
+              <td>Satu Candidate Key yang secara resmi dipilih oleh perancang database sebagai identitas pembeda unik utama. Aturan mutlak: <strong>HARUS UNIK & TIDAK BOLEH NULL</strong>.</td>
+              <td><code>nim</code> (misal: '152022001' unik dan permanen untuk setiap mahasiswa)</td>
+            </tr>
+            <tr>
+              <td><strong>Alternate Key</strong></td>
+              <td>Candidate Key yang tidak terpilih sebagai Primary Key, namun tetap harus dijaga keunikannya melalui constraint <code>UNIQUE</code>.</td>
+              <td><code>email_kampus</code> (unik, namun bukan PK utama)</td>
+            </tr>
+            <tr>
+              <td><strong style="color: var(--accent-cyan);">Foreign Key (FK)</strong></td>
+              <td>Atribut dalam suatu tabel yang merujuk pada Primary Key di tabel lain. Membentuk <strong>Integritas Referensial (Referential Integrity)</strong>.</td>
+              <td>Kolom <code>nidn_wali</code> di tabel <code>mahasiswa</code> yang merujuk pada <code>nidn</code> di tabel <code>dosen</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 40px; margin-bottom: 18px;">3. Derajat Relasi, Kardinalitas & Batasan Partisipasi</h3>
+
+      <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 10px;">A. Derajat Relasi (Relationship Degree)</h4>
+      <ul style="padding-left: 24px; color: var(--text-600); font-size: 0.95rem; line-height: 1.8; margin-bottom: 24px;">
+        <li><strong>Unary Relationship (Recursive):</strong> Relasi yang menghubungkan entitas dengan dirinya sendiri. <em>Contoh:</em> Dosen <code>mensupervisi</code> Dosen lain (relasi Ketua KBK dengan Dosen Pengampu).</li>
+        <li><strong>Binary Relationship:</strong> Relasi yang menghubungkan tepat 2 entitas berbeda (derajat paling umum dalam sistem basis data). <em>Contoh:</em> Dosen <code>membimbing</code> Mahasiswa.</li>
+        <li><strong>Ternary Relationship:</strong> Relasi simultan yang melibatkan 3 entitas sekaligus. <em>Contoh:</em> Dosen <code>mengajar</code> Mahasiswa pada <code>Ruang Kelas</code> tertentu.</li>
       </ul>
 
-      <h3>2. Kunci Relasional (Keys)</h3>
-      <p><strong>Primary Key (PK):</strong> Atribut unik yang menjadi pembeda tunggal untuk setiap baris dalam tabel. Nilai PK tidak boleh duplikat dan tidak boleh bernilai NULL.<br>
-      <strong>Foreign Key (FK):</strong> Atribut dalam satu tabel yang merujuk pada Primary Key tabel lain, membentuk integritas referensial.</p>
+      <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 10px;">B. Rasio Kardinalitas (Cardinality Ratio)</h4>
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <strong style="color: var(--text-900);">One-to-One (1:1):</strong>
+            <span style="color: var(--text-600); margin-left: 8px;">Satu baris di Entitas A berelasi dengan maksimal satu baris di Entitas B, dan sebaliknya.</span>
+          </div>
+          <span class="badge" style="background: var(--primary-subtle); color: var(--primary); font-weight: 700; padding: 3px 10px; border-radius: var(--r-full); font-size: 0.75rem;">1 Ketua Jurusan ➔ 1 Program Studi</span>
+        </div>
 
-      <h3>3. Derajat Kardinalitas</h3>
-      <ul>
-        <li><strong>One-to-One (1:1):</strong> 1 Dosen mengepalai maksimal 1 Program Studi.</li>
-        <li><strong>One-to-Many (1:N):</strong> 1 Dosen dapat menjadi pembimbing akademik bagi Banyak Mahasiswa.</li>
-        <li><strong>Many-to-Many (M:N):</strong> Banyak Mahasiswa dapat mengambil Banyak Mata Kuliah (dipecah menjadi tabel perantara/junction table seperti KRS).</li>
-      </ul>
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <strong style="color: var(--text-900);">One-to-Many (1:N):</strong>
+            <span style="color: var(--text-600); margin-left: 8px;">Satu baris di Entitas A dapat terhubung ke banyak baris di Entitas B, namun baris di B hanya terhubung ke satu baris di A.</span>
+          </div>
+          <span class="badge" style="background: var(--accent-cyan-subtle); color: var(--accent-cyan); font-weight: 700; padding: 3px 10px; border-radius: var(--r-full); font-size: 0.75rem;">1 Dosen Wali ➔ N Mahasiswa</span>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <strong style="color: var(--text-900);">Many-to-Many (M:N):</strong>
+            <span style="color: var(--text-600); margin-left: 8px;">Satu baris di A dapat berelasi dengan banyak baris di B, dan sebaliknya. <em>Wajib dipecah dengan Junction Table!</em></span>
+          </div>
+          <span class="badge" style="background: var(--purple-50); color: var(--purple-600); font-weight: 700; padding: 3px 10px; border-radius: var(--r-full); font-size: 0.75rem;">M Mahasiswa ➔ N Mata Kuliah</span>
+        </div>
+      </div>
+
+      <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-900); margin-bottom: 12px;">C. Notasi Standar Industri: Crow's Foot Notation</h4>
+      <p style="margin-bottom: 16px; color: var(--text-600); line-height: 1.75; font-size: 0.95rem;">
+        Dalam industri dan software perancangan modern (DBeaver, MySQL Workbench, Draw.io), notasi <strong>Crow's Foot (Cakar Burung)</strong> lebih banyak digunakan dibandingkan notasi Chen karena mampu merepresentasikan kardinalitas minimum (partisipasi) dan maksimum secara bersamaan:
+      </p>
+
+      <div style="overflow-x: auto; margin-bottom: 36px; border: 1px solid var(--border-base); border-radius: var(--r-xl); box-shadow: var(--shadow-sm);">
+        <table class="table-sql" style="width: 100%; margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 18%;">Simbol Crow's Foot</th>
+              <th style="width: 25%;">Nama Istilah</th>
+              <th style="width: 22%;">Batas (Min..Max)</th>
+              <th style="width: 35%;">Penjelasan Makna Bisnis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: var(--primary);">||</span></td>
+              <td><strong>Exactly One</strong> (Mandatory One)</td>
+              <td>1 .. 1</td>
+              <td>Wajib ada dan tepat satu (tidak boleh kosong/NULL, tidak boleh lebih dari satu).</td>
+            </tr>
+            <tr>
+              <td><span style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: var(--accent-cyan);">0|</span></td>
+              <td><strong>Zero or One</strong> (Optional One)</td>
+              <td>0 .. 1</td>
+              <td>Opsional (boleh belum terhubung) namun jika ada, maksimal hanya satu.</td>
+            </tr>
+            <tr>
+              <td><span style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: var(--purple-600);">|{</span></td>
+              <td><strong>One or Many</strong> (Mandatory Many)</td>
+              <td>1 .. N</td>
+              <td>Wajib memiliki minimal satu relasi dan boleh memiliki banyak relasi.</td>
+            </tr>
+            <tr>
+              <td><span style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: var(--accent-amber);">0{</span></td>
+              <td><strong>Zero or Many</strong> (Optional Many)</td>
+              <td>0 .. N</td>
+              <td>Opsional (boleh nol / belum ada data) dan boleh memiliki banyak relasi.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 40px; margin-bottom: 18px;">4. Enam Aturan Emas Transformasi ERD ke Skema Relasional (Mapping Rules)</h3>
+      <p style="margin-bottom: 24px; color: var(--text-600); line-height: 1.75; font-size: 0.975rem;">
+        Transformasi dari diagram konseptual ERD ke bentuk tabel relasional fisik mengikuti <strong>6 aturan baku</strong> yang wajib dipahami oleh setiap mahasiswa:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px;">
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--primary); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 1: Pemetaan Entitas Kuat (Strong Entity)</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            Setiap entitas kuat dipetakan menjadi <strong>satu tabel mandiri</strong>. Seluruh atribut sederhana menjadi kolom tabel. Primary Key entitas menjadi Primary Key tabel relasional tersebut.
+          </div>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--primary); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 2: Pemetaan Entitas Lemah (Weak Entity)</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            Dipetakan menjadi satu tabel tersendiri. Primary Key-nya dibentuk dari <strong>Composite Key</strong>: gabungan Foreign Key yang merujuk ke Primary Key entitas pemilik (*owner entity*) + Partial Key milik entitas lemah tersebut.
+          </div>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--accent-cyan); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 3: Pemetaan Relasi 1:1 (One-to-One)</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            Pilih salah satu tabel (terutama tabel yang memiliki <em>total participation</em> / wajib), kemudian sisipkan Primary Key tabel pasangan sebagai <strong>Foreign Key</strong> di tabel tersebut. Berikan constraint <code>UNIQUE</code> pada kolom FK tersebut agar kardinalitas 1:1 tetap terjaga.
+          </div>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--accent-cyan); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 4: Pemetaan Relasi 1:N (One-to-Many)</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            <strong>Prinsip Emas:</strong> Foreign Key <em>selalu disisipkan pada sisi 'N' (Many)</em>. Ambil Primary Key dari entitas sisi '1' lalu letakkan sebagai Foreign Key di tabel sisi 'N'. Jangan pernah membalik posisi ini karena akan merusak struktur data!
+          </div>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--purple-600); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 5: Pemetaan Relasi M:N (Many-to-Many) ➔ Junction Table</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            Relasi M:N <strong>dilarang langsung disambungkan</strong> antar-dua tabel relasional. Buatlah tabel baru yang disebut <strong>Junction Table (Tabel Perantara / Associative Table)</strong>. Tabel ini memuat minimal 2 Foreign Key yang merujuk ke PK kedua tabel asal. Kombinasi kedua FK tersebut dapat bertindak sebagai <em>Composite Primary Key</em> atau menggunakan ID auto-increment tersendiri.
+          </div>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-left: 5px solid var(--accent-amber); padding: 18px 22px; border-radius: var(--r-lg); box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px;">Aturan 6: Pemetaan Atribut Multi-Valued</div>
+          <div style="font-size: 0.9rem; color: var(--text-600); line-height: 1.65;">
+            Buatlah tabel baru khusus untuk atribut tersebut yang memuat kolom nilai data beserta Foreign Key yang merujuk ke entitas induknya (misal: tabel <code>nomor_telepon_mahasiswa</code> dengan kolom <code>nim</code> dan <code>no_telepon</code>).
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 40px; margin-bottom: 18px;">5. Studi Kasus Perancangan Basis Data Akademik ITENAS</h3>
+      <p style="margin-bottom: 20px; color: var(--text-600); line-height: 1.75; font-size: 0.975rem;">
+        Berikut adalah <strong>Kamus Data (Data Dictionary)</strong> terstruktur hasil transformasi ERD Sistem Akademik ITENAS yang digunakan di SIMLAB DB:
+      </p>
+
+      <div style="overflow-x: auto; margin-bottom: 36px; border: 1px solid var(--border-base); border-radius: var(--r-xl); box-shadow: var(--shadow-sm);">
+        <table class="table-sql" style="width: 100%; margin: 0; font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th style="width: 18%;">Tabel</th>
+              <th style="width: 16%;">Kolom</th>
+              <th style="width: 16%;">Tipe Data Fisik</th>
+              <th style="width: 14%;">Key & Nullability</th>
+              <th style="width: 36%;">Keterangan Bisnis / Constraint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #fafafa;">
+              <td><strong>dosen</strong></td>
+              <td><code>nidn</code></td>
+              <td>VARCHAR(20)</td>
+              <td><span style="color: var(--accent-amber); font-weight: 800;">PK</span>, NOT NULL</td>
+              <td>Nomor Induk Dosen Nasional (identitas unik)</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td>dosen</td>
+              <td><code>nama_dosen</code></td>
+              <td>VARCHAR(100)</td>
+              <td>NOT NULL</td>
+              <td>Nama lengkap beserta gelar akademik</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td>dosen</td>
+              <td><code>email</code></td>
+              <td>VARCHAR(100)</td>
+              <td>UNIQUE, NOT NULL</td>
+              <td>Alamat surat elektronik resmi dosen ITENAS</td>
+            </tr>
+            <tr>
+              <td><strong>matakuliah</strong></td>
+              <td><code>kode_mk</code></td>
+              <td>VARCHAR(10)</td>
+              <td><span style="color: var(--accent-amber); font-weight: 800;">PK</span>, NOT NULL</td>
+              <td>Kode mata kuliah kurikulum (misal: 'IF201')</td>
+            </tr>
+            <tr>
+              <td>matakuliah</td>
+              <td><code>nama_mk</code></td>
+              <td>VARCHAR(100)</td>
+              <td>NOT NULL</td>
+              <td>Nama resmi mata kuliah</td>
+            </tr>
+            <tr>
+              <td>matakuliah</td>
+              <td><code>sks</code></td>
+              <td>INT</td>
+              <td>NOT NULL</td>
+              <td>Bobot Satuan Kredit Semester (rentang 1-6)</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td><strong>mahasiswa</strong></td>
+              <td><code>nim</code></td>
+              <td>VARCHAR(20)</td>
+              <td><span style="color: var(--accent-amber); font-weight: 800;">PK</span>, NOT NULL</td>
+              <td>Nomor Induk Mahasiswa ITENAS (unik)</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td>mahasiswa</td>
+              <td><code>nama</code></td>
+              <td>VARCHAR(100)</td>
+              <td>NOT NULL</td>
+              <td>Nama lengkap mahasiswa terdaftar</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td>mahasiswa</td>
+              <td><code>jurusan</code></td>
+              <td>VARCHAR(50)</td>
+              <td>NOT NULL</td>
+              <td>Program studi mahasiswa (Informatika, SI, TK)</td>
+            </tr>
+            <tr style="background: #fafafa;">
+              <td>mahasiswa</td>
+              <td><code>nidn_wali</code></td>
+              <td>VARCHAR(20)</td>
+              <td><span style="color: var(--accent-cyan); font-weight: 800;">FK</span>, NULL</td>
+              <td>Relasi 1:N merujuk ke <code>dosen(nidn)</code> (Dosen Wali)</td>
+            </tr>
+            <tr>
+              <td><strong>nilai</strong> <em>(Junction)</em></td>
+              <td><code>id</code></td>
+              <td>INT</td>
+              <td><span style="color: var(--accent-amber); font-weight: 800;">PK</span>, AUTO_INCREMENT</td>
+              <td>Surrogate Key identitas transaksi penilaian</td>
+            </tr>
+            <tr>
+              <td>nilai <em>(Junction)</em></td>
+              <td><code>nim</code></td>
+              <td>VARCHAR(20)</td>
+              <td><span style="color: var(--accent-cyan); font-weight: 800;">FK</span>, NOT NULL</td>
+              <td>Merujuk ke <code>mahasiswa(nim)</code> (ON DELETE CASCADE)</td>
+            </tr>
+            <tr>
+              <td>nilai <em>(Junction)</em></td>
+              <td><code>kode_mk</code></td>
+              <td>VARCHAR(10)</td>
+              <td><span style="color: var(--accent-cyan); font-weight: 800;">FK</span>, NOT NULL</td>
+              <td>Merujuk ke <code>matakuliah(kode_mk)</code> (ON DELETE RESTRICT)</td>
+            </tr>
+            <tr>
+              <td>nilai <em>(Junction)</em></td>
+              <td><code>nilai_huruf</code></td>
+              <td>VARCHAR(2)</td>
+              <td>NOT NULL</td>
+              <td>Indeks prestasi huruf (A, B, C, D, E)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size: 1.25rem; color: var(--text-900); font-weight: 800; border-bottom: 1.5px solid var(--border-base); padding-bottom: 10px; margin-top: 40px; margin-bottom: 18px;">6. Praktik Terbaik (Best Practices) Perancangan Database</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 32px;">
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--primary);">✓</span> Konvensi Penamaan (Naming Conventions)
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-600); line-height: 1.6; margin: 0;">
+            Gunakan huruf kecil dengan pemisah garis bawah (<code>snake_case</code>), gunakan bentuk tunggal (*singular* seperti <code>mahasiswa</code> bukan <code>mahasiswas</code>), dan hindari kata tercadangkan SQL (*reserved keywords*) seperti <code>order</code>, <code>group</code>, atau <code>table</code>.
+          </p>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--primary);">✓</span> Pemilihan Tipe Data Hemat Memori
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-600); line-height: 1.6; margin: 0;">
+            Pilih tipe data yang paling efisien: gunakan <code>VARCHAR(n)</code> untuk teks dengan panjang variatif, <code>DECIMAL(p,s)</code> untuk nilai moneter atau IPK guna menghindari kesalahan presisi floating-point.
+          </p>
+        </div>
+
+        <div style="background: var(--bg-white); border: 1px solid var(--border-base); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-xs);">
+          <div style="font-weight: 800; color: var(--text-900); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--primary);">✓</span> Aksi Integritas Referensial Tepat
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-600); line-height: 1.6; margin: 0;">
+            Tentukan aksi <code>ON DELETE</code> yang cermat: gunakan <code>CASCADE</code> hanya jika entitas anak tidak boleh ada tanpa induk, atau <code>RESTRICT</code> untuk mencegah data transaksi penting terhapus secara tidak sengaja.
+          </p>
+        </div>
+      </div>
+
+      <div class="alert-box success" style="background: var(--green-50); color: var(--green-700); padding: 20px 24px; border-radius: var(--r-lg); border: 1px solid var(--green-200); display: flex; gap: 16px; align-items: flex-start; margin-top: 28px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green-600)" stroke-width="2.2" style="flex-shrink:0; margin-top: 2px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--green-700); margin-bottom: 4px;">Kesiapan Menuju Modul 03 (Normalisasi Basis Data)</div>
+          <div style="font-size: 0.95rem; color: var(--text-600); line-height: 1.65;">Setelah rancangan ERD dan skema relasional selesai disusun, langkah selanjutnya pada Pertemuan 3 adalah menguji ketahanan skema terhadap anomali data (insert, update, delete) melalui teknik normalisasi formal (1NF, 2NF, dan 3NF).</div>
+        </div>
+      </div>
     `,
     erdData: {
       entities: [
-        { name: 'MAHASISWA', attrs: ['PK nim', 'nama', 'email', 'prodi'] },
-        { name: 'KRS (Junction)', attrs: ['PK id', 'FK nim', 'FK kode_mk', 'nilai'] },
-        { name: 'MATA_KULIAH', attrs: ['PK kode_mk', 'nama_mk', 'sks', 'semester'] }
+        { 
+          name: 'DOSEN', 
+          attrs: ['PK nidn', 'nama_dosen', 'email', 'jurusan', 'jabatan'] 
+        },
+        { 
+          name: 'MAHASISWA', 
+          attrs: ['PK nim', 'nama', 'jurusan', 'angkatan', 'ipk', 'email', 'FK nidn_wali'] 
+        },
+        { 
+          name: 'NILAI (Junction M:N)', 
+          isJunction: true,
+          attrs: ['PK id', 'FK nim', 'FK kode_mk', 'semester', 'nilai_huruf', 'nilai_angka', 'tahun_ajaran'] 
+        },
+        { 
+          name: 'MATAKULIAH', 
+          attrs: ['PK kode_mk', 'nama_mk', 'sks', 'jurusan', 'semester'] 
+        }
+      ],
+      relationships: [
+        { from: 'DOSEN', cardinality: '1 : N', label: 'membimbing wali', to: 'MAHASISWA' },
+        { from: 'MAHASISWA', cardinality: '1 : N', label: 'memiliki riwayat studi', to: 'NILAI' },
+        { from: 'MATAKULIAH', cardinality: '1 : N', label: 'dinilai dalam transkrip', to: 'NILAI' }
       ]
     },
-    codeSnippet: `-- Implementasi Junction Table untuk relasi M:N
-CREATE TABLE krs (
-    id INT PRIMARY KEY,
-    nim VARCHAR(20),
-    kode_mk VARCHAR(10),
-    nilai_huruf VARCHAR(2),
-    FOREIGN KEY (nim) REFERENCES mahasiswa(nim),
-    FOREIGN KEY (kode_mk) REFERENCES mata_kuliah(kode_mk)
+    codeSnippet: `-- ========================================================
+-- IMPLEMENTASI SKEMA RELASIONAL: SISTEM AKADEMIK ITENAS
+-- Hasil Pemetaan ERD Konseptual ke Skema Fisik SQL (DDL)
+-- ========================================================
+
+-- 1. Tabel Master: DOSEN (Entitas Kuat, sisi "1")
+CREATE TABLE dosen (
+    nidn VARCHAR(20) PRIMARY KEY,
+    nama_dosen VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    jurusan VARCHAR(50) NOT NULL,
+    jabatan VARCHAR(50) DEFAULT 'Lektor'
+);
+
+-- 2. Tabel Master: MATA KULIAH (Entitas Kuat, sisi "1")
+CREATE TABLE matakuliah (
+    kode_mk VARCHAR(10) PRIMARY KEY,
+    nama_mk VARCHAR(100) NOT NULL,
+    sks INT NOT NULL CHECK (sks BETWEEN 1 AND 6),
+    jurusan VARCHAR(50) NOT NULL,
+    semester INT NOT NULL CHECK (semester BETWEEN 1 AND 8)
+);
+
+-- 3. Tabel Master: MAHASISWA (Relasi 1:N dengan Dosen Wali)
+CREATE TABLE mahasiswa (
+    nim VARCHAR(20) PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    jurusan VARCHAR(50) NOT NULL,
+    angkatan INT NOT NULL,
+    ipk DECIMAL(3,2) DEFAULT 0.00,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    nidn_wali VARCHAR(20),
+    -- Foreign Key ke Dosen Wali (ON DELETE SET NULL jika dosen pensiun)
+    CONSTRAINT fk_mhs_dosen FOREIGN KEY (nidn_wali) 
+        REFERENCES dosen(nidn) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- 4. Junction Table: NILAI (Resolusi Relasi M:N Mahasiswa & Mata Kuliah)
+CREATE TABLE nilai (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nim VARCHAR(20) NOT NULL,
+    kode_mk VARCHAR(10) NOT NULL,
+    semester INT NOT NULL,
+    nilai_huruf VARCHAR(2) NOT NULL,
+    nilai_angka INT NOT NULL CHECK (nilai_angka BETWEEN 0 AND 4),
+    tahun_ajaran VARCHAR(20) NOT NULL,
+    -- Integritas Referensial Foreign Key
+    CONSTRAINT fk_nilai_mhs FOREIGN KEY (nim) 
+        REFERENCES mahasiswa(nim) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_nilai_mk FOREIGN KEY (kode_mk) 
+        REFERENCES matakuliah(kode_mk) ON DELETE RESTRICT ON UPDATE CASCADE,
+    -- Memastikan satu mahasiswa tidak memiliki duplikasi nilai untuk MK di semester yang sama
+    CONSTRAINT uq_mhs_mk_semester UNIQUE (nim, kode_mk, semester, tahun_ajaran)
 );`,
-    suggestedPlaygroundQuery: `SELECT * FROM mahasiswa;`,
+    suggestedPlaygroundQuery: `SELECT 
+    m.nim, 
+    m.nama AS nama_mahasiswa, 
+    m.jurusan, 
+    mk.nama_mk, 
+    mk.sks, 
+    n.nilai_huruf, 
+    n.tahun_ajaran
+FROM mahasiswa m
+JOIN nilai n ON m.nim = n.nim
+JOIN matakuliah mk ON n.kode_mk = mk.kode_mk
+ORDER BY m.nim ASC, mk.kode_mk ASC;`,
     quiz: {
       title: 'Kuis Pertemuan 2: Database Design & ERD',
       questions: [
         {
           id: 'q2_1',
           type: 'mc',
-          question: 'Bagaimanakah cara menyelesaikan relasi Many-to-Many (M:N) pada database relasional?',
+          question: 'Bagaimanakah mekanisme standar perancangan basis data relasional untuk mengimplementasikan relasi Many-to-Many (M:N) antara entitas Mahasiswa dan Mata Kuliah?',
           options: [
-            'Menggabungkan kedua tabel menjadi satu tabel raksasa',
-            'Membuat junction table (tabel perantara) yang memuat Foreign Key dari kedua tabel',
-            'Membuat dua Primary Key pada satu tabel',
-            'Menghapus salah satu relasi entitas'
+            'Menambahkan kolom array kode_mk di dalam tabel mahasiswa',
+            'Membuat Junction Table (tabel perantara) yang memuat Foreign Key dari kedua entitas',
+            'Menggabungkan kedua entitas ke dalam satu tabel fisik raksasa',
+            'Mendefinisikan dua Primary Key pada satu tabel mahasiswa'
           ],
           correct: 1,
-          explanation: 'Relasi M:N dipecah menjadi dua relasi 1:N menggunakan junction/associative table yang menyimpan Foreign Key kedua entitas.'
+          explanation: 'Model relasional tidak mendukung relasi Many-to-Many (M:N) secara langsung. Solusi bakunya adalah memecah relasi tersebut menjadi dua relasi 1:N melalui Junction Table (Associative Entity) yang menyimpan Foreign Key kedua entitas induk.'
         },
         {
           id: 'q2_2',
           type: 'tf',
-          question: 'Primary Key diperbolehkan bernilai NULL asalkan nilai lainnya unik.',
+          question: 'Sebuah atribut dapat ditetapkan sebagai Primary Key meskipun memiliki beberapa nilai NULL, asalkan nilai selain NULL tersebut bersifat unik.',
           correct: false,
-          explanation: 'Salah. Primary Key memiliki aturan ketat: harus unik DAN NOT NULL (tidak boleh bernilai kosong/NULL).'
+          explanation: 'Salah. Berdasarkan prinsip Entity Integrity Constraint, Primary Key memiliki aturan mutlak: nilainya HARUS UNIK dan TIDAK BOLEH BERNILAI NULL (NOT NULL).'
+        },
+        {
+          id: 'q2_3',
+          type: 'mc',
+          question: 'Manakah pernyataan yang paling tepat mengenai Entitas Lemah (Weak Entity) dalam perancangan ERD?',
+          options: [
+            'Entitas yang memiliki lebih dari sepuluh atribut non-kunci',
+            'Entitas yang keberadaannya bergantung pada entitas pemilik (Owner) dan tidak memiliki Primary Key mandiri (hanya Partial Key)',
+            'Entitas yang tidak memiliki relasi sama sekali dengan entitas lain',
+            'Entitas yang hanya menyimpan berkas biner tidak terstruktur'
+          ],
+          correct: 1,
+          explanation: 'Entitas lemah (Weak Entity) keberadaannya bergantung mutlak pada entitas pemilik (Owner). Entitas ini tidak memiliki Primary Key mandiri dan hanya memiliki Partial Key (Discriminator) yang jika dipetakan ke relasional akan membentuk Composite Key bersama PK pemiliknya.'
+        },
+        {
+          id: 'q2_4',
+          type: 'mc',
+          question: 'Dalam perancangan basis data akademik, atribut "Usia" yang dihitung secara dinamis dari selisih tanggal saat ini dengan atribut "Tanggal Lahir" dikategorikan sebagai jenis atribut apa?',
+          options: [
+            'Composite Attribute',
+            'Multi-Valued Attribute',
+            'Derived Attribute (Atribut Turunan)',
+            'Identifying Attribute'
+          ],
+          correct: 2,
+          explanation: 'Atribut turunan (Derived Attribute) adalah atribut yang nilainya dapat dihasilkan dari perhitungan atribut lain atau waktu sistem. Best practice menyarankan untuk tidak menyimpannya secara fisik agar tidak menimbulkan anomali pembaruan (update anomaly).'
+        },
+        {
+          id: 'q2_5',
+          type: 'mc',
+          question: 'Pada relasi 1:N (One-to-Many) antara entitas Jurusan (1) dan entitas Mahasiswa (N), di manakah posisi peletakan atribut Foreign Key yang tepat menurut aturan transformasi relasional?',
+          options: [
+            'Foreign Key selalu diletakkan pada entitas sisi "N" (Tabel Mahasiswa)',
+            'Foreign Key selalu diletakkan pada entitas sisi "1" (Tabel Jurusan)',
+            'Wajib dibuat tabel perantara baru untuk menghubungkan Jurusan dan Mahasiswa',
+            'Foreign Key dapat diletakkan bebas pada salah satu tabel tanpa perbedaan dampak'
+          ],
+          correct: 0,
+          explanation: 'Aturan baku transformasi relasi 1:N menetapkan bahwa Primary Key dari sisi "1" (One) harus ditempatkan sebagai Foreign Key pada sisi "N" (Many), sehingga setiap baris mahasiswa dapat merujuk ke tepat satu jurusan tanpa redundansi.'
         }
       ]
     },
     assignment: {
       id: 'asg_2',
-      title: 'Tugas 2: Merancang ERD Sistem Perpustakaan',
+      title: 'Tugas 2: Merancang ERD Sistem Informasi Perpustakaan ITENAS',
       deadline: '4 Oktober 2026',
-      instructions: 'Rancanglah ERD lengkap untuk Sistem Informasi Perpustakaan ITENAS. Entitas minimal: Anggota, Buku, Petugas, Peminjaman, dan Detail Peminjaman. Tentukan atribut, Primary Key, Foreign Key, dan kardinalitasnya.'
+      instructions: `Rancanglah Entity Relationship Diagram (ERD) dan Skema Relasional komprehensif untuk Sistem Informasi Perpustakaan ITENAS dengan ketentuan sebagai berikut:
+
+1. Skenario Bisnis:
+   - Perpustakaan melayani peminjaman buku oleh sivitas akademika (Mahasiswa dan Dosen) yang terdaftar sebagai Anggota.
+   - Setiap transaksi peminjaman dilayani oleh seorang Petugas Perpustakaan.
+   - Satu transaksi peminjaman dapat memuat beberapa judul buku sekaligus (Relasi Many-to-Many antara Transaksi Peminjaman dan Buku).
+   - Sistem mencatat tanggal pinjam, batas kembali, tanggal realisasi pengembalian, status buku, dan perhitungan denda keterlambatan.
+
+2. Komponen Entitas yang Wajib Ada:
+   - ANGGOTA (id_anggota [PK], nomor_identitas, nama, tipe_anggota, email, no_telepon)
+   - PETUGAS (id_petugas [PK], nama_petugas, username, password_hash, peran)
+   - BUKU (isbn [PK], judul, penulis, penerbit, tahun_terbit, stok_tersedia)
+   - PEMINJAMAN (id_pinjam [PK], FK id_anggota, FK id_petugas, tgl_pinjam, batas_kembali)
+   - DETAIL_PEMINJAMAN (Junction Table: id_detail [PK], FK id_pinjam, FK isbn, tgl_kembali, denda, status)
+
+3. Deliverable Pengumpulan:
+   - Diagram ERD lengkap menggunakan notasi Crow's Foot (tunjukkan seluruh atribut, PK, FK, kardinalitas min..max, dan batasan partisipasi).
+   - Dokumen Kamus Data (Data Dictionary) terstruktur mencakup tipe data fisik dan nullability.
+   - Skrip DDL SQL (CREATE TABLE dengan PRIMARY KEY, FOREIGN KEY, dan referential actions ON DELETE / ON UPDATE).`
     }
   },
 

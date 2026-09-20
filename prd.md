@@ -303,48 +303,77 @@ Instalasi:
 
 # Pertemuan 2 — Database Design & ERD
 
-## Topik
+## Capaian Pembelajaran
 
-* Entity
-* Attribute
-* Relationship
-* Primary Key
-* Foreign Key
-* Cardinality
-* ERD
+1. Memahami 3 level siklus perancangan basis data: Konseptual (ERD), Logikal (Relational Schema), dan Fisikal (DDL/DBMS).
+2. Mengidentifikasi komponen ERD: Entitas Kuat (Strong Entity) vs Entitas Lemah (Weak Entity).
+3. Mengklasifikasikan taksonomi atribut: Simple vs Composite, Single-valued vs Multi-valued, Stored vs Derived.
+4. Menganalisis hierarki kunci relasional: Super Key, Candidate Key, Primary Key (PK), Alternate Key, dan Foreign Key (FK).
+5. Menerapkan rasio kardinalitas (1:1, 1:N, M:N) serta batasan partisipasi (Mandatory vs Optional) menggunakan notasi Crow's Foot.
+6. Menguasai 6 aturan emas transformasi diagram ERD ke skema tabel relasional SQL.
 
-## Contoh
+## Topik Utama
 
-Sistem akademik:
+* **Siklus Perancangan Basis Data**: Conceptual Design (ERD) ➔ Logical Design (Relational Schema) ➔ Physical Design (DDL & Storage Engine).
+* **Entitas**: Strong Entity (persegi panjang tunggal) vs Weak Entity (persegi panjang ganda, bergantung pada owner entity & memiliki partial key).
+* **Atribut**: Simple vs Composite, Single-valued vs Multi-valued, Stored vs Derived.
+* **Kunci Relasional**: Super Key, Candidate Key, Primary Key, Alternate Key, Foreign Key.
+* **Relasi & Kardinalitas**:
+  - Derajat relasi: Unary (Recursive), Binary, Ternary.
+  - Kardinalitas: 1:1, 1:N, M:N (Junction Table).
+  - Batasan Partisipasi: Total (Mandatory) vs Partial (Optional).
+  - Notasi Crow's Foot: `||` (Exactly One), `0|` (Zero or One), `|{` (One or Many), `0{` (Zero or Many).
+* **6 Aturan Transformasi ERD ke Relasional**:
+  1. Strong Entity ➔ Tabel tersendiri dengan Primary Key.
+  2. Weak Entity ➔ Tabel tersendiri dengan Composite PK (Owner PK + Partial Key).
+  3. Relasi 1:1 ➔ Foreign Key pada tabel dengan total participation (+ UNIQUE constraint).
+  4. Relasi 1:N ➔ Foreign Key diletakkan pada sisi 'N' (Many).
+  5. Relasi M:N ➔ Wajib membuat Junction Table (Tabel Perantara) dengan Composite PK dari kedua FK.
+  6. Multi-valued Attribute ➔ Tabel anak baru dengan FK merujuk ke tabel induk.
 
+## Studi Kasus: Sistem Akademik ITENAS
+
+Skema relasional:
+- `dosen` (nidn [PK], nama_dosen, email, jurusan, jabatan)
+- `matakuliah` (kode_mk [PK], nama_mk, sks, jurusan, semester)
+- `mahasiswa` (nim [PK], nama, jurusan, angkatan, ipk, email, nidn_wali [FK])
+- `nilai` (id [PK], nim [FK], kode_mk [FK], semester, nilai_huruf, nilai_angka, tahun_ajaran)
+
+Hubungan relasi:
 ```text
-MAHASISWA
-│
-├── NIM
-├── Nama
-├── Email
-└── Prodi
+DOSEN (1) ─────────── membimbing ───────────< (N) MAHASISWA
+MAHASISWA (1) ─────── memiliki riwayat ─────< (N) NILAI (Junction Table)
+MATAKULIAH (1) ────── dinilai dalam ────────< (N) NILAI (Junction Table)
 ```
 
-Relationship:
+## Praktik & SQL Playground
 
-```text
-Mahasiswa
-    │
-    │ mengambil
-    ▼
-Mata Kuliah
+Mahasiswa mempraktikkan pembuatan skema DDL terintegrasi dan mengeksekusi multi-table query relasional:
+
+```sql
+SELECT 
+    m.nim, 
+    m.nama AS nama_mahasiswa, 
+    m.jurusan, 
+    mk.nama_mk, 
+    mk.sks, 
+    n.nilai_huruf, 
+    n.tahun_ajaran
+FROM mahasiswa m
+JOIN nilai n ON m.nim = n.nim
+JOIN matakuliah mk ON n.kode_mk = mk.kode_mk
+ORDER BY m.nim ASC, mk.kode_mk ASC;
 ```
 
-## Praktik
+## Evaluasi & Kuis
 
-Membuat ERD sistem akademik.
+- Kuis 5 soal komprehensif (pemecahan relasi M:N, integritas PK, Weak Entity, Derived Attribute, dan peletakan FK).
 
-## Assignment
+## Tugas 2
 
-Membuat ERD:
-
-> Sistem Informasi Perpustakaan
+Merancang ERD & Skema Relasional: **Sistem Informasi Perpustakaan ITENAS**
+- Entitas wajib: Anggota, Petugas, Buku, Peminjaman, Detail Peminjaman (Junction).
+- Deliverable: Diagram Crow's Foot, Kamus Data, dan Skrip SQL DDL dengan Foreign Key constraint.
 
 ---
 

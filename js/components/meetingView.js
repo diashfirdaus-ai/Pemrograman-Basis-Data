@@ -19,23 +19,60 @@ export function renderMeetingView(meetingId) {
   // Interactive ERD Box for P2
   const erdHtml = meeting.erdData ? `
     <div class="card" style="padding: 28px 32px; margin: 32px 0; background: #fafafa; border-color: var(--primary-subtle-border);">
-      <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
-        Visualisasi ERD (Entity Relationship Diagram)
-      </h4>
-      <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: center;">
-        ${meeting.erdData.entities.map((e, idx) => `
-          <div style="background: var(--bg-secondary); border: 2px solid ${idx === 1 ? 'var(--accent-cyan)' : 'var(--primary)'}; border-radius: var(--radius-md); width: 230px; overflow: hidden; box-shadow: var(--shadow-sm);">
-            <div style="background: ${idx === 1 ? 'var(--accent-cyan-subtle)' : 'var(--primary-subtle)'}; padding: 10px; font-weight: 800; font-size: 0.875rem; text-align: center; border-bottom: 1px solid var(--border-subtle); color: var(--text-main);">
-              ${e.name}
-            </div>
-            <ul style="list-style: none; padding: 14px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; margin: 0;">
-              ${e.attrs.map(a => `<li style="margin-bottom: 6px; color: ${a.includes('PK') ? 'var(--accent-amber)' : (a.includes('FK') ? 'var(--accent-cyan)' : 'var(--text-muted)')}; font-weight: ${a.includes('PK') || a.includes('FK') ? '700' : 'normal'};">${a}</li>`).join('')}
-            </ul>
-          </div>
-          ${idx < meeting.erdData.entities.length - 1 ? `<div style="font-size: 1.5rem; color: var(--primary); font-weight: 800;">⇄</div>` : ''}
-        `).join('')}
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h4 style="font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--text-main); margin: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+          Visualisasi ERD (Entity Relationship Diagram)
+        </h4>
+        <div style="display: flex; gap: 8px; font-size: 0.775rem;">
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: var(--text-500);"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--primary);"></span> Master Entity</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: var(--text-500);"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--accent-cyan);"></span> Junction / Relasi</span>
+        </div>
       </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; justify-content: center; margin-bottom: 24px;">
+        ${meeting.erdData.entities.map((e, idx) => {
+          const isJunction = e.isJunction || e.name.toLowerCase().includes('junction') || e.name.toLowerCase().includes('nilai');
+          const borderColor = isJunction ? 'var(--accent-cyan)' : 'var(--primary)';
+          const headerBg = isJunction ? 'var(--accent-cyan-subtle)' : 'var(--primary-subtle)';
+          return `
+            <div style="background: var(--bg-secondary); border: 2px solid ${borderColor}; border-radius: var(--radius-md); width: 230px; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+              <div style="background: ${headerBg}; padding: 10px 12px; font-weight: 800; font-size: 0.85rem; text-align: center; border-bottom: 1px solid var(--border-subtle); color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <span>${e.name}</span>
+                ${isJunction ? '<span style="font-size: 0.65rem; background: var(--accent-cyan); color: white; padding: 1px 6px; border-radius: 10px; font-weight: 700;">Junction</span>' : ''}
+              </div>
+              <ul style="list-style: none; padding: 12px 14px; font-size: 0.785rem; font-family: 'JetBrains Mono', monospace; margin: 0; flex: 1;">
+                ${e.attrs.map(a => `<li style="margin-bottom: 6px; color: ${a.includes('PK') ? 'var(--accent-amber)' : (a.includes('FK') ? 'var(--accent-cyan)' : 'var(--text-muted)')}; font-weight: ${a.includes('PK') || a.includes('FK') ? '700' : 'normal'}; display: flex; align-items: center; justify-content: space-between;">
+                  <span>${a.replace(/^(PK|FK)\s+/, '')}</span>
+                  ${a.includes('PK') ? '<span style="font-size: 0.65rem; background: var(--accent-amber-subtle); color: var(--accent-amber); padding: 1px 4px; border-radius: 3px; font-weight: 800;">PK</span>' : ''}
+                  ${a.includes('FK') ? '<span style="font-size: 0.65rem; background: var(--accent-cyan-subtle); color: var(--accent-cyan); padding: 1px 4px; border-radius: 3px; font-weight: 800;">FK</span>' : ''}
+                </li>`).join('')}
+              </ul>
+            </div>
+            ${idx < meeting.erdData.entities.length - 1 ? `<div style="display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--text-400); font-weight: 800;">⇄</div>` : ''}
+          `;
+        }).join('')}
+      </div>
+
+      ${meeting.erdData.relationships && meeting.erdData.relationships.length ? `
+        <div style="padding-top: 18px; border-top: 1px dashed var(--border-base);">
+          <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Kamus Relasi Antar-Entitas & Kardinalitas:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+            ${meeting.erdData.relationships.map(rel => `
+              <div style="background: white; border: 1px solid var(--border-base); border-radius: var(--r-md); padding: 10px 14px; font-size: 0.825rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: var(--shadow-xs);">
+                <div style="font-weight: 700; color: var(--text-900); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${rel.from}</div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                  <span style="background: var(--primary-subtle); color: var(--primary); padding: 2px 8px; border-radius: var(--r-full); font-size: 0.725rem; font-weight: 800; border: 1px solid var(--primary-border);">${rel.cardinality}</span>
+                  <span style="font-size: 0.725rem; color: var(--text-500); font-style: italic;">${rel.label}</span>
+                </div>
+                <div style="font-weight: 700; color: var(--text-900); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">${rel.to}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
     </div>
   ` : '';
 
