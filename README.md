@@ -23,13 +23,17 @@
   - Modul 05: SQL Query, Filtering (`WHERE`, `LIKE`, `BETWEEN`, `IN`, `ORDER BY`, `LIMIT`).
   - Modul 06: Relasi & Multi-Table `JOIN` (`INNER`, `LEFT`, `RIGHT`, `CROSS`).
   - Modul 07: Fungsi Agregasi & Grouping (`COUNT`, `SUM`, `AVG`, `GROUP BY`, `HAVING`).
-  - Modul 08: Subquery & Advanced Nested Query.
-  - Modul 09: Database Programming: Stored Procedure & User-Defined Function.
-  - Modul 10: Trigger & Database Transaction (ACID, `COMMIT`, `ROLLBACK`).
-  - Modul 11: Arsitektur Koneksi Aplikasi & Prepared Statement.
-  - Modul 12: Integrasi CRUD Application.
-  - Modul 13: Keamanan Database (SQL Injection Prevention) & Optimasi Index (B-Tree).
-  - Modul 14: Panduan Proyek Akhir & Rubrik Penilaian.
+  - Modul 08: Arsitektur Web Fullstack JS & Integrasi Database (Node.js, Express.js REST API, Driver Database & Connection Pool).
+  - Modul 09: Operasi READ — REST API Endpoint & UI Data Rendering (SQL `SELECT`, `GET`, Query Parameters, Fetch API).
+  - Modul 10: Operasi CREATE — Form Handling & Prepared Statements (`POST`, JSON Parsing, SQL `INSERT`, Pencegahan SQL Injection).
+  - Modul 11: Operasi UPDATE & DELETE — Modifikasi Data & Integritas Referensial (`PUT`, `DELETE`, Modal Edit & Konfirmasi Aman).
+  - Modul 12: Relational CRUD — Operasi Multi-Tabel & Foreign Keys (Master-Detail, Dropdown FK, Backend `JOIN`, Transaksi ACID).
+  - Modul 13: Keamanan, Validasi & Optimasi Performa CRUD (Sanitasi Input, Indeks B-Tree, Server-Side Pagination).
+  - Modul 14: Final Project Showcase, Deployment & Evaluasi Sistem CRUD (Arsitektur Utuh, Cloud Deployment, Rubrik Penilaian).
+
+- **Fullstack Web CRUD Pipeline Simulator**:
+  - Simulasi interaktif operasi CRUD terhubung langsung ke antarmuka web dan database in-memory.
+  - Live Inspector aliran data: *Frontend Form* ➔ *HTTP Request JSON* ➔ *Express Route* ➔ *Prepared Statement SQL* ➔ *HTTP Response JSON* ➔ *DOM Sync*.
 
 - **Simulator Query Visual & Pipeline Execution**:
   - Visualisasi pipeline eksekusi: `FROM` ➔ `WHERE` ➔ `JOIN` ➔ `GROUP BY` ➔ `OUTPUT`.

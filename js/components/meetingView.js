@@ -1,6 +1,7 @@
 // Meeting Detail View Component — White & ITENAS Orange Theme
 import { MEETINGS_DATA } from '../data/meetings.js';
 import { state } from '../state.js';
+import { renderCrudSimulator } from './crudSimulator.js';
 
 export function renderMeetingView(meetingId) {
   const id = parseInt(meetingId, 10);
@@ -134,11 +135,13 @@ export function renderMeetingView(meetingId) {
         ${erdHtml}
       </div>
 
+      ${id >= 8 ? renderCrudSimulator(id) : ''}
+
       <!-- Code Example Box -->
       <div class="card" style="padding: 28px 32px; margin-bottom: 32px; background: #0f172a; border-color: #334155;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
           <span style="font-size: 0.85rem; font-weight: 700; color: #fb923c; font-family: 'JetBrains Mono', monospace;">
-            // Contoh Sintaks SQL Perkuliahan
+            ${id >= 8 ? '// Contoh Kode Implementasi Fullstack JS (Backend & Frontend)' : '// Contoh Sintaks SQL Perkuliahan'}
           </span>
           <div style="display: flex; gap: 10px;">
             <button class="btn btn-secondary btn-sm" style="background: #1e293b; color: #f8fafc; border-color: #334155; padding: 6px 14px;" onclick="navigator.clipboard.writeText(\`${meeting.codeSnippet.replace(/`/g, '\\`')}\`); alert('Kode berhasil disalin!');">
@@ -146,7 +149,7 @@ export function renderMeetingView(meetingId) {
             </button>
             <button class="btn btn-primary btn-sm" style="padding: 6px 16px;" onclick="window.app.openQueryInPlayground(\`${(meeting.suggestedPlaygroundQuery || meeting.codeSnippet).replace(/`/g, '\\`')}\`)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-              Coba di Simulator Visual →
+              ${id >= 8 ? 'Buka Query di SQL Simulator →' : 'Coba di Simulator Visual →'}
             </button>
           </div>
         </div>

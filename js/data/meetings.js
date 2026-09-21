@@ -1305,448 +1305,881 @@ HAVING COUNT(m.nim) >= 1;`,
       instructions: 'Pada database toko_online, buatlah laporan rekapitulasi total pendapatan (SUM total) dan jumlah pesanan (COUNT) untuk setiap pelanggan. Tampilkan hanya pelanggan yang total belanjanya melebihi Rp 500.000!'
     }
   },
-
   {
     id: 8,
-    title: 'Subquery & Advanced Query',
-    subtitle: 'Nested Query, Scalar Subquery, Correlated Subquery, dan Operator EXISTS / IN',
+    title: 'Arsitektur Web Fullstack JS & Integrasi Database',
+    subtitle: 'Membangun Pondasi Aplikasi Web Multi-Tier: Node.js, Express.js REST API, Driver Database (pg/mysql2), & Connection Pooling',
     duration: '150 Menit',
     objectives: [
-      'Memahami konsep subquery (query di dalam query)',
-      'Menggunakan subquery pada klausa WHERE, FROM, dan SELECT',
-      'Membedakan subquery independen dan Correlated Subquery',
-      'Menggunakan operator EXISTS dan NOT EXISTS untuk validasi keberadaan data'
+      'Memahami arsitektur web modern multi-tier (Frontend UI, Backend REST API, & Database Relasional)',
+      'Menginisialisasi proyek Node.js dan mengonfigurasi Express.js sebagai backend HTTP server',
+      'Mengonfigurasi koneksi database menggunakan driver (pg/mysql2) dan Connection Pool',
+      'Mengamankan kredensial database menggunakan Environment Variables (.env) dan membuat endpoint tes koneksi'
     ],
     content: `
-      <h3>1. Apa itu Subquery?</h3>
-      <p>Subquery (atau inner query / nested query) adalah query SELECT yang berada di dalam query utama. Subquery mengeksekusi lebih dahulu dan hasilnya digunakan oleh query induk.</p>
+      <h3>1. Arsitektur Multi-Tier Aplikasi Web Modern</h3>
+      <p>Dalam rekayasa perangkat lunak modern, aplikasi web tidak pernah menghubungkan antarmuka pengguna di browser secara langsung ke server database karena risiko keamanan fatal (kredensial database terekspos). Sebagai gantinya, digunakan arsitektur <strong>3-Tier</strong>:</p>
+      
+      <div class="diagram-box p-4 bg-tertiary rounded-md my-4 font-mono text-sm text-center" style="background: #fff7ed; border: 1.5px solid #fed7aa; padding: 18px; border-radius: 8px; line-height: 1.7;">
+        <span style="color: #ea580c; font-weight: 800;">[ Tier 1: Client / Frontend ]</span> Browser (HTML5, Vanilla JS / React)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;│ <em>HTTP Requests (GET, POST, PUT, DELETE) + JSON Data</em><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        <span style="color: #0284c7; font-weight: 800;">[ Tier 2: Application Server / Backend ]</span> Node.js + Express.js API<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;│ <em>Database Driver + Connection Pool (TCP Sockets)</em><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        <span style="color: #059669; font-weight: 800;">[ Tier 3: Database Server ]</span> RDBMS (PostgreSQL / MySQL / MariaDB)
+      </div>
 
-      <h3>2. Tipe-Tipe Subquery</h3>
-      <ul>
-        <li><strong>Scalar Subquery:</strong> Mengembalikan nilai tunggal (1 baris, 1 kolom). Sering digunakan untuk perbandingan (misal: <code>WHERE nilai > (SELECT AVG(nilai) FROM ...)</code>).</li>
-        <li><strong>Multi-Row Subquery:</strong> Mengembalikan sekumpulan nilai (1 kolom, banyak baris). Digunakan bersama operator <code>IN</code>, <code>ANY</code>, atau <code>ALL</code>.</li>
-        <li><strong>Correlated Subquery:</strong> Subquery yang merujuk pada kolom dari query luar, sehingga dievaluasi berulang untuk setiap baris query luar.</li>
-      </ul>
+      <h3>2. Peran Node.js & Express.js</h3>
+      <p><strong>Node.js</strong> adalah runtime JavaScript di sisi server yang asinkron (<em>non-blocking I/O</em>). <strong>Express.js</strong> adalah web framework minimalis yang memudahkan pengelolaan routing URL, parsing body request JSON, dan implementasi middleware keamanan.</p>
+
+      <h3>3. Mengapa Menggunakan Connection Pooling?</h3>
+      <p>Membuka koneksi TCP baru ke database (<em>handshake</em>, autentikasi, alokasi memori) membutuhkan biaya komputasi yang mahal (<em>heavy resource cost</em>). <strong>Connection Pool</strong> mempertahankan sekumpulan koneksi siap pakai yang dapat dipinjam oleh request masuk dan dikembalikan setelah query selesai, meningkatkan kapasitas throughput ribuan pengguna secara drastis.</p>
+
+      <h3>4. Konfigurasi Environment Variables (.env)</h3>
+      <p>Kredensial database (host, port, username, password) tidak boleh di-hardcode ke dalam kode sumber git. Simpan di file <code>.env</code>:</p>
+      <pre style="background: #0f172a; color: #38bdf8; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;"><code>DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=rahasia_itenas
+DB_NAME=db_akademik
+PORT=3000</code></pre>
     `,
-    codeSnippet: `-- Mencari mahasiswa yang memiliki nilai di atas rata-rata kelas
-SELECT m.nim, m.nama, k.nilai_angka
-FROM mahasiswa m
-JOIN krs k ON m.nim = k.nim
-WHERE k.nilai_angka > (
-    SELECT AVG(nilai_angka) 
-    FROM krs
-);`,
-    suggestedPlaygroundQuery: `SELECT nim, nama FROM mahasiswa WHERE nim IN (SELECT nim FROM krs WHERE nilai_huruf = 'A');`,
+    codeSnippet: `// ==========================================
+// 1. config/db.js — Setup Database Connection Pool
+// ==========================================
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  max: 20, // Maksimal 20 koneksi simultan dalam pool
+  idleTimeoutMillis: 30000
+});
+
+// Uji koneksi awal saat server boot
+pool.connect()
+  .then(client => {
+    console.log('✅ Terhubung ke database relasional ITENAS!');
+    client.release();
+  })
+  .catch(err => console.error('❌ Gagal koneksi database:', err.message));
+
+module.exports = pool;
+
+// ==========================================
+// 2. server.js — Entry Point Express.js API
+// ==========================================
+const express = require('express');
+const cors = require('cors');
+const db = require('./config/db');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json()); // Parsing JSON request body
+
+// Healthcheck route
+app.get('/api/health', async (req, res) => {
+  try {
+    const result = await db.query('SELECT NOW() as db_time');
+    res.json({
+      status: 'online',
+      message: 'Server dan Database berjalan normal',
+      db_time: result.rows[0].db_time
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+app.listen(PORT, () => console.log(\`🚀 Server aktif di http://localhost:\${PORT}\`));`,
+    suggestedPlaygroundQuery: `SELECT current_database(), current_user, NOW() AS db_time;`,
     quiz: {
-      title: 'Kuis Pertemuan 8: Subquery',
+      title: 'Kuis Pertemuan 8: Arsitektur Web & Koneksi DB',
       questions: [
         {
           id: 'q8_1',
           type: 'mc',
-          question: 'Manakah operator yang tepat untuk mencocokkan nilai jika subquery menghasilkan lebih dari satu baris hasil?',
-          options: ['=', '!=', 'IN', '<='],
+          question: 'Mengapa aplikasi frontend di browser tidak boleh terhubung langsung ke database tanpa melalui backend API?',
+          options: [
+            'Browser tidak memiliki layar yang cukup lebar untuk menampilkan database',
+            'Kredensial database (username/password) akan terekspos ke publik di inspect element dan memicu risiko keamanan fatal',
+            'Database hanya dapat menerima data bertipe teks kapital',
+            'Koneksi internet browser tidak mendukung kabel LAN'
+          ],
+          correct: 1,
+          explanation: 'Jika browser langsung mengakses database, seluruh kredensial dan hak akses tersimpan di file JavaScript client yang bisa dibaca siapa pun via DevTools, memungkinkan penyerang memanipulasi atau menghapus seluruh basis data.'
+        },
+        {
+          id: 'q8_2',
+          type: 'mc',
+          question: 'Apa fungsi utama mekanisme Connection Pool pada backend server Node.js?',
+          options: [
+            'Menghapus baris duplikat di tabel secara otomatis',
+            'Membuat backup database setiap 5 menit',
+            'Menggunakan kembali koneksi yang sudah terbuka sehingga server tidak membuang waktu membuka koneksi TCP baru pada setiap request pengguna',
+            'Mengubah format SQL menjadi file Microsoft Word'
+          ],
           correct: 2,
-          explanation: 'Operator IN digunakan untuk memeriksa apakah suatu nilai berada di dalam himpunan hasil multi-baris dari subquery.'
+          explanation: 'Connection pool menyimpan sekumpulan koneksi database aktif yang siap dipakai dan dikembalikan oleh request HTTP secara berulang, menghemat beban handshake TCP yang berat.'
         }
       ]
     },
     assignment: {
       id: 'asg_8',
-      title: 'Tugas 8: Query Mahasiswa Berprestasi',
+      title: 'Tugas 8: Setup Backend Server & Uji Pool Koneksi',
       deadline: '15 November 2026',
-      instructions: 'Tulis query menggunakan subquery untuk menampilkan daftar mahasiswa yang mengambil mata kuliah "Pemrograman Basis Data" DAN memiliki nilai di atas rata-rata nilai mata kuliah tersebut!'
+      instructions: 'Inisialisasi proyek Node.js dengan npm, pasang dependensi express, pg (atau mysql2), dotenv, dan cors. Buat modul pool koneksi terisolasi dan buat endpoint GET /api/health yang mengembalikan status koneksi database beserta waktu server!'
     }
   },
 
   {
     id: 9,
-    title: 'Database Programming: Stored Procedure & Function',
-    subtitle: 'Prosedur Tersimpan, User-Defined Functions, Parameter (IN, OUT), Variabel, & Kontrol Alur',
+    title: 'Operasi READ — REST API Endpoint & UI Data Rendering',
+    subtitle: 'Mengambil Data dengan SQL SELECT, Menangani Endpoint GET, Query Parameters (Filter & Search), dan Render Tabel Dinamis di Browser',
     duration: '150 Menit',
     objectives: [
-      'Memahami konsep pemrograman logika di sisi database engine',
-      'Membuat Stored Procedure dengan parameter IN dan OUT',
-      'Membuat User-Defined Function (UDF) yang mengembalikan nilai',
-      'Menggunakan kontrol alur logika (IF-THEN-ELSE, WHILE loop)'
+      'Membangun endpoint GET /api/mahasiswa untuk mengambil sekumpulan baris data dari database',
+      'Menerapkan fitur filtering, searching, dan sorting menggunakan Query Parameters (req.query)',
+      'Mengirimkan response berstandar JSON (200 OK) beserta struktur metadata',
+      'Menggunakan Fetch API di sisi client untuk mengambil data asinkron dan merender tabel HTML dinamis'
     ],
     content: `
-      <h3>1. Database Programming vs Application Programming</h3>
-      <p>Alih-alih memindahkan data mentah dalam jumlah besar ke server aplikasi, Stored Procedure memungkinkan eksekusi logika bisnis kompleks langsung di dalam database engine. Keuntungannya meliputi: performa lebih cepat, mengurangi beban lalu lintas jaringan (*network traffic*), dan enkapsulasi keamanan data.</p>
+      <h3>1. Alur Siklus Operasi READ pada Aplikasi Web</h3>
+      <p>Operasi <strong>READ</strong> adalah operasi yang paling sering terjadi (rata-rata 80% dari total lalu lintas web). Siklus lengkapnya:</p>
+      <ol>
+        <li>Pengguna membuka halaman aplikasi atau mengetikkan kata kunci di kotak pencarian.</li>
+        <li>JavaScript Frontend memicu <code>fetch('/api/mahasiswa?search=Budi&prodi=IF')</code>.</li>
+        <li>Backend Express membaca query parameter pada <code>req.query</code> dan menyusun query SQL <code>SELECT</code> terparameterisasi.</li>
+        <li>Database mengeksekusi query dan mengembalikan array of records.</li>
+        <li>Backend mengirimkan respons berstatus <code>200 OK</code> berupa data JSON.</li>
+        <li>Frontend merender data tersebut menjadi elemen-elemen baris tabel <code>&lt;tr&gt;</code> secara dinamis ke dalam DOM.</li>
+      </ol>
 
-      <h3>2. Stored Procedure vs Function</h3>
-      <ul>
-        <li><strong>Stored Procedure:</strong> Kumpulan perintah SQL terkompilasi yang dapat menerima parameter (IN, OUT, INOUT), melakukan transaksi DDL/DML, dan tidak wajib mengembalikan nilai return langsung.</li>
-        <li><strong>Function:</strong> Rutinitas yang <em>wajib</em> mengembalikan satu nilai return tunggal, dapat dipanggil langsung di dalam klausa SELECT.</li>
-      </ul>
+      <h3>2. Standar Struktur Respons REST API</h3>
+      <p>Respons API yang baik selalu membungkus data dalam struktur objek yang konsisten agar mudah dikonsumsi frontend:</p>
+      <pre style="background: #0f172a; color: #a5f3fc; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;"><code>{
+  "success": true,
+  "message": "Data mahasiswa berhasil dimuat",
+  "total": 3,
+  "data": [
+    { "nim": "152022001", "nama": "Budi Santoso", "prodi": "Informatika", "angkatan": 2022 },
+    ...
+  ]
+}</code></pre>
+
+      <h3>3. State Handling di Frontend: Loading, Empty, & Error</h3>
+      <p>Frontend wajib mengelola 3 kondisi saat memuat data:
+      <strong>Loading state</strong> (animasi spinner saat jaringan memproses),
+      <strong>Empty state</strong> (pesan bersahabat bila tidak ada data yang cocok dengan pencarian), dan
+      <strong>Error state</strong> (notifikasi jelas jika koneksi server terputus).</p>
     `,
-    codeSnippet: `-- Contoh Stored Procedure pada MySQL/RDBMS
-DELIMITER //
-CREATE PROCEDURE HitungRataRataMhs(IN p_nim VARCHAR(20), OUT p_ipk DECIMAL(4,2))
-BEGIN
-    SELECT AVG(nilai_angka) INTO p_ipk
-    FROM krs
-    WHERE nim = p_nim;
-END //
-DELIMITER ;
+    codeSnippet: `// ==========================================
+// 1. Backend Route: routes/mahasiswa.js (GET)
+// ==========================================
+const express = require('express');
+const router = express.Router();
+const db = require('../config/db');
 
--- Memanggil procedure:
-CALL HitungRataRataMhs('152022001', @hasil_ipk);
-SELECT @hasil_ipk;`,
-    suggestedPlaygroundQuery: `SELECT nim, AVG(nilai_angka) AS rata_rata FROM krs GROUP BY nim;`,
+router.get('/mahasiswa', async (req, res) => {
+  const { search, prodi } = req.query;
+  try {
+    let sql = 'SELECT nim, nama, prodi, angkatan FROM mahasiswa WHERE 1=1';
+    const params = [];
+
+    // Filter dinamis terparameterisasi
+    if (search) {
+      params.push(\`%\${search}%\`);
+      sql += \` AND (nama ILIKE $\${params.length} OR nim ILIKE $\${params.length})\`;
+    }
+
+    if (prodi) {
+      params.push(prodi);
+      sql += \` AND prodi = $\${params.length}\`;
+    }
+
+    sql += ' ORDER BY nim ASC';
+
+    const result = await db.query(sql, params);
+    res.status(200).json({
+      success: true,
+      total: result.rowCount,
+      data: result.rows
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================
+// 2. Frontend Client: public/js/app.js (Fetch & Render)
+// ==========================================
+async function loadMahasiswa(filterSearch = '') {
+  const tableBody = document.getElementById('mhsTableBody');
+  tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Memuat data...</td></tr>';
+
+  try {
+    const res = await fetch(\`/api/mahasiswa?search=\${encodeURIComponent(filterSearch)}\`);
+    const json = await res.json();
+
+    if (!json.data || json.data.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data ditemukan.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = json.data.map((m, idx) => \`
+      <tr>
+        <td>\${idx + 1}</td>
+        <td><strong>\${m.nim}</strong></td>
+        <td>\${m.nama}</td>
+        <td><span class="badge">\${m.prodi}</span></td>
+        <td>\${m.angkatan}</td>
+      </tr>
+    \`).join('');
+  } catch (err) {
+    tableBody.innerHTML = \`<tr><td colspan="5" style="color:red;">Gagal memuat: \${err.message}</td></tr>\`;
+  }
+}`,
+    suggestedPlaygroundQuery: `SELECT nim, nama, prodi, angkatan FROM mahasiswa WHERE prodi = 'Informatika' ORDER BY angkatan DESC;`,
     quiz: {
-      title: 'Kuis Pertemuan 9: Database Programming',
+      title: 'Kuis Pertemuan 9: Operasi READ & REST API',
       questions: [
         {
           id: 'q9_1',
           type: 'mc',
-          question: 'Perbedaan utama antara Stored Procedure dan User-Defined Function adalah:',
+          question: 'HTTP Method dan status response standar apakah yang digunakan untuk operasi membaca sekumpulan data pada REST API?',
           options: [
-            'Stored Procedure tidak boleh menggunakan parameter',
-            'Function wajib mengembalikan sebuah nilai skalar dan dapat dipanggil langsung dalam query SELECT',
-            'Stored Procedure hanya dapat berjalan pada Windows',
-            'Function tidak dapat membaca tabel database'
+            'Method POST dengan response status 201 Created',
+            'Method GET dengan response status 200 OK',
+            'Method DELETE dengan response status 404 Not Found',
+            'Method PUT dengan response status 500 Internal Server Error'
           ],
           correct: 1,
-          explanation: 'Function harus mengembalikan nilai tunggal (RETURN value) dan dapat langsung digunakan pada statement SELECT.'
+          explanation: 'Method GET digunakan untuk operasi pengambilan/pembacaan data (idempotent), dan kode status standar keberhasilannya adalah 200 OK.'
         }
       ]
     },
     assignment: {
       id: 'asg_9',
-      title: 'Tugas 9: Membuat Procedure Hitung Diskon Toko',
+      title: 'Tugas 9: Membangun Endpoint READ & Antarmuka Tabel Dinamis',
       deadline: '22 November 2026',
-      instructions: 'Rancanglah sebuah Stored Procedure atau rancangan logika prosedural yang menerima parameter total_belanja. Jika belanja > 500.000 diskon 10%, jika > 1.000.000 diskon 15%, selain itu 0%. Kembalikan nominal total akhir setelah diskon!'
+      instructions: 'Buatlah endpoint GET /api/mahasiswa yang mendukung filter nama dan program studi. Rancang halaman web frontend dengan HTML tabel yang memanggil endpoint tersebut menggunakan Fetch API dan merender hasil pencarian secara real-time.'
     }
   },
 
   {
     id: 10,
-    title: 'Trigger & Database Transaction',
-    subtitle: 'Audit Logging Otomatis, Integritas Bisnis, Prinsip ACID, COMMIT, dan ROLLBACK',
+    title: 'Operasi CREATE — Form Handling & Prepared Statements',
+    subtitle: 'Menerima Input Pengguna, Validasi Server-Side, SQL INSERT Terparameterisasi, dan Mencegah Kerentanan SQL Injection',
     duration: '150 Menit',
     objectives: [
-      'Memahami konsep Trigger (BEFORE / AFTER INSERT, UPDATE, DELETE)',
-      'Membuat trigger untuk keperluan audit trail / histori perubahan',
-      'Memahami prinsip ACID (Atomicity, Consistency, Isolation, Durability)',
-      'Mengendalikan transaksi dengan BEGIN TRANSACTION, COMMIT, dan ROLLBACK'
+      'Merancang antarmuka form input data web dengan validasi client-side (HTML5 validation)',
+      'Menangani HTTP POST request dengan parsing JSON body (express.json)',
+      'Melakukan validasi integritas data di sisi server sebelum mengeksekusi query database',
+      'Menggunakan SQL INSERT dengan Prepared Statement / Parameterized Query untuk mencegah SQL Injection',
+      'Mengembalikan HTTP Status Code 201 Created dan memberikan toast feedback ke pengguna'
     ],
     content: `
-      <h3>1. Trigger</h3>
-      <p>Trigger adalah blok kode prosedural yang dieksekusi secara otomatis oleh DBMS saat terjadi event data tertentu (INSERT, UPDATE, atau DELETE). Trigger sangat berguna untuk: validasi data tingkat lanjut, auto-update saldo/stok, dan audit logging perubahan data pengguna.</p>
+      <h3>1. Alur Siklus Operasi CREATE (Insert Data)</h3>
+      <p>Operasi <strong>CREATE</strong> menambahkan record baru ke dalam tabel basis data. Alur standarnya meliputi:</p>
+      <ol>
+        <li>Pengguna mengisikan data pada Form Input web (NIM, Nama, Prodi, Angkatan).</li>
+        <li>Event <code>form.addEventListener('submit', ...)</code> mencegat reload halaman default dengan <code>e.preventDefault()</code>.</li>
+        <li>Data dibungkus dalam payload JSON dan dikirim via <code>fetch('/api/mahasiswa', { method: 'POST', body: JSON.stringify(...) })</code>.</li>
+        <li>Backend menerima request, menjalankan validasi kelengkapan field dan keunikan Primary Key (NIM).</li>
+        <li>Backend mengeksekusi perintah SQL <code>INSERT INTO mahasiswa ... VALUES ($1, $2, $3, $4)</code> secara terparameterisasi.</li>
+        <li>Jika berhasil, backend merespons dengan <code>201 Created</code> dan mengembalikan record yang baru dibuat.</li>
+        <li>Frontend menutup modal form, menampilkan notifikasi sukses, dan memperbarui tabel secara reaktif tanpa refresh halaman.</li>
+      </ol>
 
-      <h3>2. Database Transaction & Prinsip ACID</h3>
-      <p>Transaksi adalah satu unit kerja logis yang terdiri dari beberapa operasi database. Transaksi harus memenuhi standar <strong>ACID</strong>:</p>
-      <ul>
-        <li><strong>Atomicity (All or Nothing):</strong> Seluruh rangkaian perintah berhasil dijalankan, atau jika satu gagal maka semuanya dibatalkan (*rolled back*).</li>
-        <li><strong>Consistency:</strong> Database selalu berada dalam keadaan valid sesuai constraint sebelum dan sesudah transaksi.</li>
-        <li><strong>Isolation:</strong> Transaksi yang berjalan bersamaan tidak saling menginterferensi sebelum di-commit.</li>
-        <li><strong>Durability:</strong> Perubahan yang telah di-commit tersimpan permanen bahkan jika sistem tiba-tiba padam.</li>
-      </ul>
+      <h3>2. Mengapa Prepared Statement Wajib untuk INSERT?</h3>
+      <p>Jika backend menggabungkan input pengguna langsung menggunakan string concatenation (misal: <code>"INSERT INTO mhs VALUES ('" + req.body.nim + "')"</code>), penyerang dapat menyuntikkan query jahat (<em>SQL Injection</em>). Dengan <strong>Prepared Statement</strong> (placeholder <code>$1, $2</code> atau <code>?</code>), database memperlakukan nilai masukan murni sebagai data literal yang aman.</p>
     `,
-    codeSnippet: `-- Contoh Transaksi Transfer Saldo
-START TRANSACTION;
+    codeSnippet: `// ==========================================
+// 1. Backend Route: routes/mahasiswa.js (POST)
+// ==========================================
+router.post('/mahasiswa', async (req, res) => {
+  const { nim, nama, prodi, angkatan } = req.body;
 
--- 1. Kurangi saldo rekening pengirim
-UPDATE rekening SET saldo = saldo - 500000 WHERE no_rek = 'REK_001';
+  // 1. Validasi server-side
+  if (!nim || !nama || !prodi || !angkatan) {
+    return res.status(400).json({
+      success: false,
+      message: 'Semua kolom (NIM, Nama, Prodi, Angkatan) wajib diisi!'
+    });
+  }
 
--- 2. Tambah saldo rekening penerima
-UPDATE rekening SET saldo = saldo + 500000 WHERE no_rek = 'REK_002';
+  try {
+    // 2. Query terparameterisasi (Prepared Statement)
+    const sql = \`
+      INSERT INTO mahasiswa (nim, nama, prodi, angkatan)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    \`;
+    const values = [nim.trim(), nama.trim(), prodi, parseInt(angkatan, 10)];
 
--- Jika kedua operasi sukses, simpan permanen:
-COMMIT;
--- Jika terjadi kegagalan:
--- ROLLBACK;`,
-    suggestedPlaygroundQuery: `SELECT * FROM krs;`,
+    const result = await db.query(sql, values);
+
+    // 3. Response 201 Created
+    res.status(201).json({
+      success: true,
+      message: 'Data mahasiswa berhasil ditambahkan!',
+      data: result.rows[0]
+    });
+  } catch (err) {
+    // Tangani duplikasi Primary Key (kode PostgreSQL: 23505)
+    if (err.code === '23505') {
+      return res.status(409).json({
+        success: false,
+        message: \`NIM '\${nim}' sudah terdaftar dalam sistem!\`
+      });
+    }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================
+// 2. Frontend Client: Form Submit Handler
+// ==========================================
+async function submitTambahMahasiswa(event) {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {
+    nim: form.nim.value,
+    nama: form.nama.value,
+    prodi: form.prodi.value,
+    angkatan: form.angkatan.value
+  };
+
+  const response = await fetch('/api/mahasiswa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const result = await response.json();
+  if (response.ok) {
+    alert('Sukses: ' + result.message);
+    form.reset();
+    loadMahasiswa(); // Segarkan tampilan tabel
+  } else {
+    alert('Gagal: ' + result.message);
+  }
+}`,
+    suggestedPlaygroundQuery: `INSERT INTO mahasiswa (nim, nama, prodi, angkatan) VALUES ('152022099', 'Fajar Ramadhan', 'Informatika', 2023);`,
     quiz: {
-      title: 'Kuis Pertemuan 10: Trigger & Transaksi',
+      title: 'Kuis Pertemuan 10: Operasi CREATE & Prepared Statements',
       questions: [
         {
           id: 'q10_1',
           type: 'mc',
-          question: 'Prinsip ACID manakah yang menjamin bahwa semua instruksi dalam satu transaksi berhasil seluruhnya atau tidak sama sekali (all or nothing)?',
-          options: ['Consistency', 'Isolation', 'Atomicity', 'Durability'],
-          correct: 2,
-          explanation: 'Atomicity memastikan sebuah transaksi diperlakukan sebagai satu kesatuan tunggal yang tak dapat dibagi; jika ada bagian yang gagal, seluruh transaksi dibatalkan.'
+          question: 'Status HTTP code standar manakah yang dikembalikan oleh REST API ketika sebuah data record baru berhasil disimpan di database?',
+          options: ['200 OK', '201 Created', '204 No Content', '304 Not Modified'],
+          correct: 1,
+          explanation: 'HTTP 201 Created adalah status standar spesifikasi HTTP/REST yang mengindikasikan bahwa request berhasil dan menghasilkan pembuatan resource baru di server.'
+        },
+        {
+          id: 'q10_2',
+          type: 'mc',
+          question: 'Mengapa penggunaan Prepared Statement ($1, $2, ...) dapat mencegah serangan SQL Injection?',
+          options: [
+            'Karena database mengenkripsi seluruh harddisk',
+            'Karena query SQL dikompilasi terlebih dahulu, sehingga parameter input hanya diperlakukan sebagai nilai data mentah dan tidak akan pernah dieksekusi sebagai sintaks SQL',
+            'Karena prepared statement melarang angka genap',
+            'Karena prepared statement secara otomatis mematikan jaringan internet'
+          ],
+          correct: 1,
+          explanation: 'Prepared Statement memisahkan struktur instruksi query dari data input, sehingga karakter berbahaya seperti kutip tunggal tidak dapat memanipulasi klausa query.'
         }
       ]
     },
     assignment: {
       id: 'asg_10',
-      title: 'Tugas 10: Desain Trigger Audit Log',
+      title: 'Tugas 10: Form Web & Endpoint CREATE Mahasiswa',
       deadline: '29 November 2026',
-      instructions: 'Buatlah skema tabel "log_perubahan_nilai" dan rancang trigger AFTER UPDATE pada tabel nilai yang secara otomatis mencatat NIM, mata kuliah, nilai lama, nilai baru, dan waktu pengubahan setiap kali ada nilai yang diedit oleh dosen!'
+      instructions: 'Rancang form modal Tambah Data Mahasiswa di antarmuka web. Buat endpoint POST /api/mahasiswa dengan validasi server-side dan handling error duplikasi NIM (Primary Key violation).'
     }
   },
 
   {
     id: 11,
-    title: 'Database Connection & Application Architecture',
-    subtitle: 'Koneksi Aplikasi ke Database, Driver (JDBC, PDO, Prisma), Connection Pool & Prepared Statement',
+    title: 'Operasi UPDATE & DELETE — Modifikasi Data & Integritas Referensial',
+    subtitle: 'Implementasi Edit Modal, Endpoint PUT/PATCH, Query UPDATE Terparameterisasi, Penghapusan Data (DELETE), dan Dialog Konfirmasi Aman',
     duration: '150 Menit',
     objectives: [
-      'Memahami arsitektur integrasi aplikasi multi-tier dengan database',
-      'Memahami peran database driver dan connection string',
-      'Mengenal teknik connection pooling untuk skalabilitas',
-      'Menggunakan Prepared Statements untuk efisiensi dan keamanan'
+      'Membuat alur edit data: Memuat data terpilih ke form modal, mengedit field, dan mengirim request PUT /api/mahasiswa/:nim',
+      'Mengeksekusi query SQL UPDATE dengan klausa WHERE spesifik dan parameter sanitasi',
+      'Membangun endpoint DELETE /api/mahasiswa/:nim dengan modal konfirmasi dialog aman',
+      'Memahami integritas referensial Foreign Key (ON DELETE RESTRICT vs ON DELETE CASCADE) dan konsep Soft Delete'
     ],
     content: `
-      <h3>1. Arsitektur Komunikasi Aplikasi - Database</h3>
-      <p>Aplikasi web modern (frontend dan backend) berkomunikasi dengan database melalui lapisan middleware:</p>
-      <div class="diagram-box p-4 bg-tertiary rounded-md my-4 font-mono text-sm text-center">
-        [ Client UI (React / HTML) ]<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;│ (HTTP REST / GraphQL)<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;▼<br>
-        [ Backend Server (Node.js / Python / Laravel) ]<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;│ (Database Driver: PDO / JDBC / pg / sqlite3)<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;▼<br>
-        [ Connection Pool ]<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;│ (TCP Socket)<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;▼<br>
-        [ Database Engine (PostgreSQL / MySQL) ]
-      </div>
+      <h3>1. Alur Operasi UPDATE Data</h3>
+      <p>Mengubah data yang sudah ada membutuhkan alur dua tahap:</p>
+      <ul>
+        <li><strong>Tahap 1 (Fetch Single Data):</strong> Pengguna menekan tombol "Edit" pada salah satu baris tabel. Data baris tersebut diisikan ke field-field Form Modal Edit (dengan field Primary Key NIM dibuat <code>readonly</code>).</li>
+        <li><strong>Tahap 2 (Submit Update):</strong> Pengguna mengubah data (misal: nama atau prodi) dan mengklik "Simpan Perubahan". Client mengirimkan <code>PUT /api/mahasiswa/:nim</code>.</li>
+        <li><strong>Tahap 3 (Backend Processing):</strong> Backend mengeksekusi <code>UPDATE mahasiswa SET nama = $1, prodi = $2, angkatan = $3 WHERE nim = $4</code>. Jika <code>rowCount === 0</code>, kembalikan <code>404 Not Found</code>.</li>
+      </ul>
 
-      <h3>2. Connection String</h3>
-      <p>Format URI baku yang memuat kredensial koneksi: <code>postgresql://username:password@localhost:5432/nama_db</code>.</p>
-
-      <h3>3. Mengapa Prepared Statement Wajib?</h3>
-      <p>Prepared Statement memisahkan antara instruksi SQL terkompilasi dan data input pengguna. Hal ini mencegah manipulasi query oleh pihak luar (*SQL Injection*) dan mempercepat eksekusi berulang melalui mekanisme caching query plan.</p>
+      <h3>2. Alur Operasi DELETE & Pertimbangan Integritas Data</h3>
+      <p>Operasi hapus sangat berisiko (<em>destructive action</em>). Aturan wajib pengembangan aplikasi basis data:</p>
+      <ul>
+        <li><strong>Wajib Dialog Konfirmasi:</strong> Jangan pernah menghapus data seketika saat tombol ditekan. Selalu tampilkan modal konfirmasi (misal: <em>"Yakin ingin menghapus mahasiswa Budi (152022001)?"</em>).</li>
+        <li><strong>Foreign Key Constraint:</strong> Jika data mahasiswa sudah memiliki relasi di tabel lain (misal tabel KRS/Nilai), database dengan <code>ON DELETE RESTRICT</code> akan menolak penghapusan. Backend harus menangani error ini dengan ramah: <em>"Data tidak dapat dihapus karena masih terkait dengan data KRS aktif!"</em></li>
+        <li><strong>Hard Delete vs Soft Delete:</strong> Pada sistem enterprise, data sering kali tidak dihapus fisik, melainkan ditandai dengan kolom status: <code>UPDATE mahasiswa SET is_deleted = TRUE WHERE nim = $1</code>.</li>
+      </ul>
     `,
-    codeSnippet: `// Contoh Node.js + PostgreSQL Prepared Statement
-const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    codeSnippet: `// ==========================================
+// 1. Backend Routes: routes/mahasiswa.js (PUT & DELETE)
+// ==========================================
 
-async function getMahasiswaByNim(nim) {
-  // Query terparameterisasi (mencegah SQL Injection)
-  const query = 'SELECT * FROM mahasiswa WHERE nim = $1';
-  const result = await pool.query(query, [nim]);
-  return result.rows[0];
+// Endpoint UPDATE
+router.put('/mahasiswa/:nim', async (req, res) => {
+  const { nim } = req.params;
+  const { nama, prodi, angkatan } = req.body;
+
+  try {
+    const sql = \`
+      UPDATE mahasiswa
+      SET nama = $1, prodi = $2, angkatan = $3
+      WHERE nim = $4
+      RETURNING *
+    \`;
+    const result = await db.query(sql, [nama, prodi, angkatan, nim]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
+    }
+
+    res.json({ success: true, message: 'Data berhasil diperbarui', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Endpoint DELETE
+router.delete('/mahasiswa/:nim', async (req, res) => {
+  const { nim } = req.params;
+
+  try {
+    const sql = 'DELETE FROM mahasiswa WHERE nim = $1 RETURNING *';
+    const result = await db.query(sql, [nim]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
+    }
+
+    res.json({ success: true, message: \`Mahasiswa \${nim} berhasil dihapus\` });
+  } catch (err) {
+    // Tangani Foreign Key Violation (PostgreSQL code 23503)
+    if (err.code === '23503') {
+      return res.status(409).json({
+        success: false,
+        message: 'Gagal menghapus: Mahasiswa masih memiliki relasi data nilai/KRS!'
+      });
+    }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================
+// 2. Frontend Client: Delete Confirmation
+// ==========================================
+async function deleteMahasiswa(nim, nama) {
+  const yakin = confirm(\`Apakah Anda yakin ingin menghapus mahasiswa \${nama} (\${nim})?\`);
+  if (!yakin) return;
+
+  const res = await fetch(\`/api/mahasiswa/\${nim}\`, { method: 'DELETE' });
+  const result = await res.json();
+
+  if (res.ok) {
+    alert(result.message);
+    loadMahasiswa(); // Segarkan tampilan tabel
+  } else {
+    alert('Error: ' + result.message);
+  }
 }`,
-    suggestedPlaygroundQuery: `SELECT * FROM mahasiswa WHERE nim = '152022001';`,
+    suggestedPlaygroundQuery: `UPDATE mahasiswa SET prodi = 'Sistem Informasi' WHERE nim = '152022001';`,
     quiz: {
-      title: 'Kuis Pertemuan 11: Database Connection',
+      title: 'Kuis Pertemuan 11: Operasi UPDATE, DELETE & Integritas FK',
       questions: [
         {
           id: 'q11_1',
           type: 'mc',
-          question: 'Apa fungsi utama dari Connection Pool pada aplikasi backend berkala tinggi?',
+          question: 'Apa bahaya terbesar mengeksekusi query UPDATE atau DELETE tanpa menyertakan klausa WHERE?',
           options: [
-            'Menghapus database secara otomatis saat beban puncak',
-            'Menggunakan kembali koneksi database yang sudah terbuka agar tidak perlu membuat koneksi TCP baru yang lambat pada setiap request',
-            'Mengganti format query menjadi file JSON',
-            'Memblokir akses pengguna luar'
+            'Database akan otomatis restart sendiri',
+            'Seluruh baris data pada tabel akan terubah atau terhapus total tanpa terkecuali',
+            'Kecepatan internet kampus akan melambat',
+            'Query akan otomatis dialihkan ke Google'
           ],
           correct: 1,
-          explanation: 'Membuka dan menutup koneksi database baru sangat berat (*expensive*). Connection pool mempertahankan sekumpulan koneksi siap pakai untuk digunakan kembali secara efisien.'
+          explanation: 'Klausa WHERE menentukan target baris mana yang akan dimodifikasi atau dihapus. Tanpa WHERE, DBMS akan menerapkan aksi tersebut pada seluruh baris di dalam tabel.'
         }
       ]
     },
     assignment: {
       id: 'asg_11',
-      title: 'Tugas 11: Konfigurasi Koneksi Backend',
+      title: 'Tugas 11: Implementasi Modal Edit & Aksi Hapus Aman',
       deadline: '6 Desember 2026',
-      instructions: 'Tulis skrip kode koneksi database menggunakan bahasa pemrograman pilihan Anda (Node.js, Python, PHP, atau Java) yang mengimplementasikan parameterized query untuk mengambil data dari tabel pengguna berdasarkan ID!'
+      instructions: 'Lengkapi aplikasi CRUD Anda dengan tombol Edit dan Hapus pada tiap baris data tabel. Buat modal form edit yang memicu PUT /api/mahasiswa/:nim, dan dialog konfirmasi sebelum memanggil DELETE /api/mahasiswa/:nim.'
     }
   },
 
   {
     id: 12,
-    title: 'CRUD Application Integration',
-    subtitle: 'Membangun Aplikasi Lengkap Berbasis Database dengan Operasi Create, Read, Update, Delete',
+    title: 'Relational CRUD — Operasi Multi-Tabel & Foreign Keys',
+    subtitle: 'Menghubungkan Data Berelasi (Master-Detail), Dropdown Pilihan Berdasarkan Foreign Key, Query Multi-Table JOIN di Backend, dan Transaksi ACID',
     duration: '150 Menit',
     objectives: [
-      'Menghubungkan antarmuka pengguna (UI) dengan operasi database',
-      'Mengimplementasikan validasi input di sisi klien dan server',
-      'Menyusun response API terstruktur (JSON response)',
-      'Mengelola status UI dinamis (Loading, Success, Error state)'
+      'Merancang antarmuka CRUD yang melibatkan relasi 1-to-Many (Master Mahasiswa & Detail KRS / Transaksi)',
+      'Menyediakan elemen dropdown select pada form web yang memuat data secara dinamis dari tabel master Foreign Key',
+      'Menulis query backend dengan multi-table JOIN (INNER / LEFT JOIN) untuk menyajikan laporan komposit',
+      'Menerapkan transaksi database atomik (BEGIN, COMMIT, ROLLBACK) pada operasi multi-tabel di Express.js'
     ],
     content: `
-      <h3>1. Alur Lengkap CRUD</h3>
-      <p>Aplikasi database yang baik memiliki alur siklus hidup lengkap:</p>
+      <h3>1. Pola Relational CRUD (Master-Detail)</h3>
+      <p>Aplikasi dunia nyata jarang hanya memiliki satu tabel tunggal. Biasanya terdapat relasi antar entitas:</p>
       <ul>
-        <li><strong>Create:</strong> Form input -> Validasi input -> SQL INSERT terparameterisasi -> Feedback sukses ke pengguna.</li>
-        <li><strong>Read:</strong> Request data (Pagination/Filter) -> SQL SELECT -> Format JSON -> Render data pada tabel/grid UI.</li>
-        <li><strong>Update:</strong> Ambil data lama -> Tampilkan form edit -> SQL UPDATE -> Perbarui tampilan seketika.</li>
-        <li><strong>Delete:</strong> Konfirmasi penghapusan -> SQL DELETE -> Hapus item dari tampilan UI.</li>
+        <li><strong>Tabel Master:</strong> <code>mahasiswa</code> (NIM, Nama) dan <code>mata_kuliah</code> (Kode MK, Nama MK, SKS).</li>
+        <li><strong>Tabel Transaksi / Junction:</strong> <code>krs</code> (ID KRS, NIM sebagai FK, Kode MK sebagai FK, Nilai Huruf).</li>
       </ul>
+
+      <h3>2. Dropdown Foreign Key Dinamis di Form</h3>
+      <p>Saat pengguna ingin mendaftarkan mata kuliah untuk mahasiswa, form tidak meminta pengguna mengetik manual kode mata kuliah. Form web memuat opsi pilihan dari <code>GET /api/matakuliah</code> ke dalam tag <code>&lt;select&gt;</code>, menjamin bahwa foreign key yang dikirim selalu valid sesuai data yang ada di database.</p>
+
+      <h3>3. Query JOIN di Sisi Backend</h3>
+      <p>Endpoint <code>GET /api/krs</code> tidak sekadar mengembalikan ID numerik mentah, melainkan melakukan <code>INNER JOIN</code> agar frontend menerima nama lengkap mahasiswa dan judul mata kuliah siap saji untuk tabel antarmuka.</p>
+
+      <h3>4. Menjaga Integritas dengan Transaksi ACID</h3>
+      <p>Jika satu aksi pengguna melibatkan perubahan pada lebih dari satu tabel (misal: mendaftar mahasiswa baru sekaligus otomatis membuatkan rekam data akademik awal), kedua query harus dibungkus dalam <code>BEGIN ... COMMIT</code>. Jika salah satu gagal, lakukan <code>ROLLBACK</code> untuk menghindari data korup atau setengah tersimpan.</p>
     `,
-    codeSnippet: `// Contoh Endpoint REST API CRUD (Express.js)
-app.post('/api/mahasiswa', async (req, res) => {
-  const { nim, nama, email, prodi } = req.body;
+    codeSnippet: `// ==========================================
+// 1. Backend Route: routes/krs.js (JOIN & Transaction)
+// ==========================================
+router.get('/krs', async (req, res) => {
   try {
-    const result = await db.query(
-      'INSERT INTO mahasiswa (nim, nama, email, prodi) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nim, nama, email, prodi]
-    );
-    res.status(201).json({ success: true, data: result.rows[0] });
+    // Query multi-table JOIN
+    const sql = \`
+      SELECT 
+        k.id_krs,
+        k.nim,
+        m.nama AS nama_mahasiswa,
+        k.kode_mk,
+        mk.nama_mk,
+        mk.sks,
+        k.nilai_huruf
+      FROM krs k
+      JOIN mahasiswa m ON k.nim = m.nim
+      JOIN mata_kuliah mk ON k.kode_mk = mk.kode_mk
+      ORDER BY k.id_krs DESC
+    \`;
+    const result = await db.query(sql);
+    res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+// Contoh Transaksi ACID saat pendaftaran KRS
+router.post('/krs/daftar-paket', async (req, res) => {
+  const { nim, daftar_kode_mk } = req.body;
+  const client = await db.connect(); // Ambil 1 client dedicated dari pool
+
+  try {
+    await client.query('BEGIN'); // Mulai transaksi
+
+    for (const kode_mk of daftar_kode_mk) {
+      await client.query(
+        'INSERT INTO krs (nim, kode_mk) VALUES ($1, $2)',
+        [nim, kode_mk]
+      );
+    }
+
+    await client.query('COMMIT'); // Simpan seluruh data jika semua sukses
+    res.status(201).json({ success: true, message: 'Seluruh mata kuliah berhasil diambil!' });
+  } catch (err) {
+    await client.query('ROLLBACK'); // Batalkan semua jika ada 1 saja yang gagal
+    res.status(500).json({ success: false, message: 'Pendaftaran gagal: ' + err.message });
+  } finally {
+    client.release(); // Kembalikan client ke pool
+  }
 });`,
-    suggestedPlaygroundQuery: `SELECT * FROM mahasiswa LIMIT 5;`,
+    suggestedPlaygroundQuery: `SELECT k.id_krs, m.nama, mk.nama_mk, mk.sks, k.nilai_huruf FROM krs k JOIN mahasiswa m ON k.nim = m.nim JOIN mata_kuliah mk ON k.kode_mk = mk.kode_mk;`,
     quiz: {
-      title: 'Kuis Pertemuan 12: Aplikasi CRUD',
+      title: 'Kuis Pertemuan 12: Relational CRUD & Transaksi ACID',
       questions: [
         {
           id: 'q12_1',
           type: 'mc',
-          question: 'Status HTTP code manakah yang standar dikembalikan saat operasi CREATE (penambahan data baru) berhasil?',
-          options: ['200 OK', '201 Created', '204 No Content', '404 Not Found'],
+          question: 'Mengapa operasi INSERT multi-baris yang saling bergantung wajib dibungkus dalam blok BEGIN dan COMMIT (Database Transaction)?',
+          options: [
+            'Agar server database tidak boros baterai',
+            'Untuk menjamin prinsip Atomicity: jika salah satu query gagal, seluruh operasi dibatalkan (ROLLBACK) sehingga tidak ada data setengah tersimpan yang korup',
+            'Agar query bisa dibaca oleh Microsoft Excel',
+            'Untuk mengganti nama tabel secara acak'
+          ],
           correct: 1,
-          explanation: 'HTTP status code 201 Created adalah kode standar REST API untuk menandakan bahwa sumber daya baru telah berhasil dibuat.'
+          explanation: 'Transaksi ACID menjamin sifat Atomicity (All-or-Nothing), mencegah kondisi di mana sebagian data tersimpan sementara sisanya gagal sehingga merusak konsistensi data relasional.'
         }
       ]
     },
     assignment: {
       id: 'asg_12',
-      title: 'Tugas 12: Implementasi Mini CRUD',
+      title: 'Tugas 12: CRUD Multi-Tabel dengan Dropdown Foreign Key',
       deadline: '13 Desember 2026',
-      instructions: 'Buatlah prototipe mini aplikasi CRUD untuk entitas "Buku" atau "Produk" yang memiliki tombol Tambah Data, Tampil Data, Ubah Data, dan Hapus Data terintegrasi dengan database.'
+      instructions: 'Buatlah modul CRUD untuk entitas yang berelasi Foreign Key (misalnya entitas KRS yang menghubungkan Mahasiswa dan Mata Kuliah). Pastikan form penambahan data menggunakan dropdown pilihan dinamis dan tabel menampilkan hasil multi-table JOIN.'
     }
   },
 
   {
     id: 13,
-    title: 'Database Security & Optimization',
-    subtitle: 'SQL Injection Prevention, Indexing (B-Tree), EXPLAIN Query Plan, & Hak Akses Pengguna',
+    title: 'Keamanan, Validasi & Optimasi Performa CRUD',
+    subtitle: 'Pencegahan SQL Injection Lanjutan, Sanitasi Input, Optimasi Query dengan Indeks B-Tree, dan Server-Side Pagination',
     duration: '150 Menit',
     objectives: [
-      'Memahami mekanisme serangan SQL Injection dan pencegahannya',
-      'Menerapkan prinsip least privilege pada akun pengguna database',
-      'Memahami cara kerja Indexing (B-Tree) untuk mempercepat pencarian data',
-      'Menganalisis performa query menggunakan perintah EXPLAIN'
+      'Mengaudit potensi celah keamanan SQL Injection dan XSS pada seluruh endpoint REST API',
+      'Menerapkan skema validasi dan sanitasi input ketat di backend (misal express-validator)',
+      'Memahami cara kerja Indexing B-Tree dan mengoptimalkan kolom pencarian (CREATE INDEX)',
+      'Mengimplementasikan Server-Side Pagination (LIMIT & OFFSET) untuk efisiensi beban memori'
     ],
     content: `
-      <h3>1. SQL Injection: Anatomi & Bahayanya</h3>
-      <p>SQL Injection terjadi ketika input pengguna yang tidak disaring digabungkan langsung (*string concatenation*) ke dalam query SQL mentah:</p>
-      <pre><code>-- Input jahat: ' OR '1'='1
-SELECT * FROM users WHERE email = '' OR '1'='1' AND password = '...';</code></pre>
-      <p>Kondisi <code>'1'='1'</code> selalu bernilai TRUE, menyebabkan pembobolan akun tanpa password yang valid! <strong>Solusi mutlak:</strong> Gunakan selalu Prepared Statement / ORM.</p>
+      <h3>1. Audit Keamanan & Pencegahan Celah SQL Injection</h3>
+      <p>Banyak pengembang pemula mengamankan klausa <code>WHERE</code> tetapi lalai pada klausa <code>ORDER BY</code> atau nama kolom dinamis. Karena nama kolom tidak bisa menggunakan placeholder <code>$1</code>, gunakan teknik <strong>Whitelist Validation</strong>:</p>
+      <pre style="background: #0f172a; color: #fde047; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;"><code>// Cek whitelist kolom sebelum dimasukkan ke query
+const ALLOWED_COLUMNS = ['nim', 'nama', 'angkatan'];
+const sortBy = ALLOWED_COLUMNS.includes(req.query.sort) ? req.query.sort : 'nim';
+const order = req.query.order === 'DESC' ? 'DESC' : 'ASC';
+const query = \`SELECT * FROM mahasiswa ORDER BY \${sortBy} \${order}\`;</code></pre>
 
-      <h3>2. Optimasi dengan Indexing</h3>
-      <p>Index bekerja seperti indeks pada buku: alih-alih melakukan pemindaian seluruh tabel (*Full Table Scan*), DBMS menggunakan struktur B-Tree untuk langsung melompat ke lokasi baris yang dicari. Index sangat menguntungkan untuk kolom yang sering masuk klausa WHERE atau JOIN.</p>
+      <h3>2. Optimasi Kecepatan dengan Indexing B-Tree</h3>
+      <p>Tanpa indeks, pencarian data pada tabel dengan 500.000 baris akan melakukan <strong>Sequential Scan (Full Table Scan)</strong> dengan kompleksitas waktu <em>O(N)</em>. Dengan membuat indeks:</p>
+      <pre style="background: #0f172a; color: #38bdf8; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;"><code>CREATE INDEX idx_mahasiswa_nama ON mahasiswa(nama);
+CREATE INDEX idx_krs_nim ON krs(nim);</code></pre>
+      <p>Database membentuk pohon seimbang (B-Tree) dengan kompleksitas <em>O(log N)</em>, mempercepat waktu pencarian dari ratusan milidetik menjadi kurang dari 1 milidetik.</p>
+
+      <h3>3. Server-Side Pagination (LIMIT & OFFSET)</h3>
+      <p>Mengambil 100.000 baris sekaligus ke frontend akan membuat browser freeze dan membebani transfer data jaringan. Gunakan pagination server:</p>
+      <pre style="background: #0f172a; color: #a5f3fc; padding: 14px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;"><code>const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 10;
+const offset = (page - 1) * limit;
+
+const dataQuery = 'SELECT * FROM mahasiswa ORDER BY nim LIMIT $1 OFFSET $2';
+const countQuery = 'SELECT COUNT(*) FROM mahasiswa';</code></pre>
     `,
-    codeSnippet: `-- Membuat index pada kolom yang sering dicari
-CREATE INDEX idx_mahasiswa_nama ON mahasiswa(nama);
+    codeSnippet: `// ==========================================
+// routes/mahasiswa.js — Paginated & Indexed Endpoint
+// ==========================================
+router.get('/mahasiswa/paginated', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const offset = (page - 1) * limit;
+    const search = req.query.search ? \`%\${req.query.search}%\` : null;
 
--- Menganalisis rencana eksekusi query (Query Execution Plan)
-EXPLAIN SELECT * FROM mahasiswa WHERE nama = 'Diash Firdaus';`,
-    suggestedPlaygroundQuery: `SELECT * FROM mahasiswa WHERE nama LIKE '%Diash%';`,
+    let countSql = 'SELECT COUNT(*) FROM mahasiswa';
+    let dataSql = 'SELECT nim, nama, prodi, angkatan FROM mahasiswa';
+    const params = [];
+
+    if (search) {
+      params.push(search);
+      countSql += ' WHERE nama ILIKE $1 OR nim ILIKE $1';
+      dataSql += ' WHERE nama ILIKE $1 OR nim ILIKE $1';
+    }
+
+    // Hitung total baris
+    const countResult = await db.query(countSql, params);
+    const totalRows = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(totalRows / limit);
+
+    // Ambil data halaman aktif
+    const dataParams = [...params, limit, offset];
+    dataSql += \` ORDER BY nim ASC LIMIT $\${dataParams.length - 1} OFFSET $\${dataParams.length}\`;
+    
+    const dataResult = await db.query(dataSql, dataParams);
+
+    res.json({
+      success: true,
+      pagination: {
+        page,
+        limit,
+        totalRows,
+        totalPages
+      },
+      data: dataResult.rows
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});`,
+    suggestedPlaygroundQuery: `EXPLAIN SELECT * FROM mahasiswa WHERE nama LIKE '%Diash%';`,
     quiz: {
-      title: 'Kuis Pertemuan 13: Keamanan & Optimasi',
+      title: 'Kuis Pertemuan 13: Keamanan & Optimasi CRUD',
       questions: [
         {
           id: 'q13_1',
           type: 'mc',
-          question: 'Bagaimana cara paling efektif untuk mencegah serangan SQL Injection pada aplikasi?',
+          question: 'Bagaimana cara aman menangani parameter nama kolom pada klausa ORDER BY dinamis yang tidak dapat menggunakan placeholder $1?',
           options: [
-            'Menghilangkan database dari internet',
-            'Menggunakan Prepared Statements dengan parameterized query',
-            'Hanya menggunakan huruf kapital pada query SQL',
-            'Menyimpan password dalam format plaintext'
+            'Menggabungkan langsung string dari req.query tanpa pemeriksaan',
+            'Menggunakan Whitelist Validation: mencocokkan input dengan daftar nama kolom yang diizinkan sebelum menyusun query',
+            'Menonaktifkan klausa ORDER BY selamanya',
+            'Mengubah seluruh data menjadi format JSON'
           ],
           correct: 1,
-          explanation: 'Prepared Statements memastikan input diperlakukan murni sebagai parameter data, bukan kode SQL yang dapat dieksekusi.'
+          explanation: 'Whitelist validation memastikan bahwa hanya nilai yang telah didaftarkan secara eksplisit (seperti ["nim", "nama", "angkatan"]) yang dapat disisipkan ke query, menggagalkan segala upaya injeksi SQL.'
         }
       ]
     },
     assignment: {
       id: 'asg_13',
-      title: 'Tugas 13: Analisis Query Execution Plan',
+      title: 'Tugas 13: Pagination Server-Side & Uji Performa Index',
       deadline: '20 Desember 2026',
-      instructions: 'Lakukan pengujian query SELECT dengan klausa WHERE sebelum dan sesudah penambahan INDEX. Tuliskan analisis efisiensi waktu eksekusi dan perbedaan rencana eksekusi (EXPLAIN plan).'
+      instructions: 'Terapkan fitur pagination (tombol Next, Prev, dan nomor halaman) pada antarmuka web CRUD Anda. Buat index B-Tree pada kolom pencarian database dan uji perbedaan performa menggunakan perintah EXPLAIN.'
     }
   },
 
   {
     id: 14,
-    title: 'Final Project & Presentation',
-    subtitle: 'Presentasi dan Evaluasi Proyek Akhir Pengembangan Sistem Berbasis Database',
+    title: 'Final Project Showcase, Deployment & Evaluasi Sistem CRUD',
+    subtitle: 'Integrasi Akhir Sistem Web Fullstack CRUD, Panduan Deployment Cloud, Pengujian Endpoint API, dan Rubrik Penilaian Proyek',
     duration: '150 Menit',
     objectives: [
-      'Menyelesaikan implementasi sistem terintegrasi database secara utuh',
-      'Memenuhi syarat minimal: 5 tabel berelasi, CRUD, JOIN, Stored Procedure, dan Trigger',
-      'Mempresentasikan hasil proyek, skema ERD, dan demo aplikasi',
-      'Mendapatkan evaluasi dan feedback menyeluruh dari dosen pengampu'
+      'Mengintegrasikan seluruh komponen arsitektur web fullstack (Frontend UI, Express REST API, Database Relasional) secara utuh',
+      'Memenuhi kriteria proyek: Minimal 5 tabel berelasi, operasi CRUD lengkap, validasi keamanan, dan penanganan transaksi',
+      'Men-deploy aplikasi dan database ke platform cloud publik (Vercel, Render, Railway, Supabase/Neon)',
+      'Menyusun dokumentasi teknis API dan mempresentasikan demo sistem di hadapan penguji'
     ],
     content: `
-      <h3>1. Panduan Proyek Akhir Pemrograman Basis Data</h3>
-      <p>Proyek akhir merupakan muara dari seluruh kompetensi yang dipelajari selama 14 pertemuan perkuliahan. Mahasiswa memilih 1 dari 4 domain studi kasus:</p>
+      <h3>1. Arsitektur Siap Rilis (Production Ready)</h3>
+      <p>Sebelum aplikasi web CRUD dirilis ke publik (<em>deployment</em>), pastikan checklist berikut terpenuhi:</p>
       <ul>
-        <li><strong>Studi Kasus 1: Sistem Informasi Akademik</strong> (Mahasiswa, Dosen, Mata Kuliah, KRS, Nilai).</li>
-        <li><strong>Studi Kasus 2: Sistem Informasi Perpustakaan</strong> (Anggota, Buku, Petugas, Peminjaman, Denda).</li>
-        <li><strong>Studi Kasus 3: Sistem Manajemen Inventori & Toko</strong> (Produk, Kategori, Supplier, Transaksi, Stok).</li>
-        <li><strong>Studi Kasus 4: Sistem Rekam Medis Rumah Sakit</strong> (Pasien, Dokter, Poliklinik, Rekam Medis, Obat).</li>
+        <li><strong>Konfigurasi CORS Terbatas:</strong> Izinkan hanya domain frontend produksi Anda untuk memanggil API backend (bukan <code>origin: '*'</code>).</li>
+        <li><strong>Environment Variables Cloud:</strong> Pastikan string koneksi database produksi disimpan di Environment Variable platform hosting (bukan di repository git).</li>
+        <li><strong>Global Error Handler:</strong> Jangan biarkan server crash akibat unhandled error; gunakan Express global error middleware.</li>
       </ul>
 
-      <h3>2. Rubrik Penilaian Proyek Akhir</h3>
-      <table class="table-sql my-4">
+      <h3>2. Panduan Deployment Stack Modern</h3>
+      <ol>
+        <li><strong>Database Relasional:</strong> Buat instance PostgreSQL cloud gratis di <a href="https://neon.tech" target="_blank">Neon.tech</a> atau <a href="https://supabase.com" target="_blank">Supabase</a>. Eksekusi script DDL skema tabel Anda.</li>
+        <li><strong>Backend Node.js API:</strong> Hubungkan repositori GitHub Anda ke <a href="https://render.com" target="_blank">Render</a> atau <a href="https://railway.app" target="_blank">Railway</a>, masukkan environment variable <code>DATABASE_URL</code>, dan deploy service.</li>
+        <li><strong>Frontend Web:</strong> Deploy antarmuka pengguna ke <a href="https://vercel.com" target="_blank">Vercel</a> atau GitHub Pages dengan URL API mengarah ke backend Render Anda.</li>
+      </ol>
+
+      <h3>3. Rubrik Penilaian Proyek Akhir CRUD ITENAS</h3>
+      <table class="table-sql my-4" style="width: 100%; font-size: 0.85rem;">
         <thead>
           <tr>
             <th>Komponen Penilaian</th>
             <th>Bobot</th>
-            <th>Kriteria Keunggulan</th>
+            <th>Kriteria Keberhasilan</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Desain Database & Normalisasi</td>
+            <td><strong>Desain Database & Relasi</strong></td>
             <td>25%</td>
-            <td>Minimal 5 tabel, memenuhi 3NF, integritas PK/FK kuat</td>
+            <td>Minimal 5 tabel ternormalisasi (3NF), Foreign Key konsisten, integritas referensial terjaga.</td>
           </tr>
           <tr>
-            <td>Implementasi SQL & Query Lanjut</td>
-            <td>25%</td>
-            <td>Multi-table JOIN, fungsi agregasi, subquery</td>
+            <td><strong>Fungsionalitas CRUD Fullstack</strong></td>
+            <td>30%</td>
+            <td>Operasi Create, Read, Update, Delete berjalan lancar di browser tanpa error console, form terhubung ke API.</td>
           </tr>
           <tr>
-            <td>Database Programming (SP & Trigger)</td>
+            <td><strong>Keamanan & Prepared Statements</strong></td>
             <td>20%</td>
-            <td>Minimal 1 Stored Procedure dan 1 Trigger fungsional</td>
+            <td>Seluruh query SQL terparameterisasi, bebas dari celah SQL Injection, ada validasi server-side.</td>
           </tr>
           <tr>
-            <td>Aplikasi Antarmuka (UI/CRUD)</td>
-            <td>20%</td>
-            <td>Aplikasi dapat menambah, membaca, mengedit, dan menghapus data</td>
+            <td><strong>Kualitas UI / UX & Desain</strong></td>
+            <td>15%</td>
+            <td>Antarmuka responsif, modern, memiliki indikator loading, pesan validasi ramah, dan modal konfirmasi.</td>
           </tr>
           <tr>
-            <td>Presentasi & Penguasaan Materi</td>
+            <td><strong>Presentasi & Demo Sistem</strong></td>
             <td>10%</td>
-            <td>Kelancaran menjelaskan alur data dan tanya jawab teknis</td>
+            <td>Kelancaran menjelaskan alur data dari form HTML hingga tabel database dan tanya jawab teknis.</td>
           </tr>
         </tbody>
       </table>
     `,
-    codeSnippet: `-- Checklist Final Project DBLearn:
--- [x] Skema database ternormalisasi (5+ tabel)
--- [x] Script DDL & DML initial data
--- [x] Query JOIN, Aggregate, & Subquery
--- [x] 1 Stored Procedure / Function
--- [x] 1 Trigger aktif
--- [x] Demo antarmuka aplikasi`,
-    suggestedPlaygroundQuery: `SELECT * FROM mahasiswa;`,
+    codeSnippet: `// ==========================================
+// server.js — Konfigurasi Production & Global Error Handler
+// ==========================================
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+
+// Konfigurasi CORS produksi
+const allowedOrigins = [
+  'http://localhost:5500',
+  'http://localhost:3000',
+  process.env.FRONTEND_PRODUCTION_URL
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Akses ditolak oleh kebijakan CORS'));
+    }
+  }
+}));
+
+app.use(express.json());
+
+// Routes API
+app.use('/api/mahasiswa', require('./routes/mahasiswa'));
+app.use('/api/matakuliah', require('./routes/matakuliah'));
+app.use('/api/krs', require('./routes/krs'));
+
+// Global Error Handler Middleware
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error:', err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Terjadi kesalahan pada server' 
+      : err.message
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(\`🚀 Production Server berjalan di port \${PORT}\`));`,
+    suggestedPlaygroundQuery: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`,
     quiz: {
-      title: 'Kuis Evaluasi Akhir: Komprehensif Basis Data',
+      title: 'Kuis Evaluasi Akhir: Komprehensif Fullstack Web CRUD',
       questions: [
         {
           id: 'q14_1',
           type: 'mc',
-          question: 'Mengapa integritas referensial (Foreign Key) sangat penting dalam aplikasi basis data multi-tabel?',
+          question: 'Mengapa connection string database produksi (seperti DATABASE_URL dengan password) tidak boleh pernah di-commit ke repositori publik GitHub?',
           options: [
-            'Untuk memperlambat query agar server tidak panas',
-            'Untuk mencegah adanya record yatim piatu (orphan record) dan menjamin konsistensi hubungan antar entitas',
-            'Agar tabel tidak bisa dibaca oleh aplikasi frontend',
-            'Sebagai pengganti password database'
+            'Dapat dibaca oleh penyerang di internet yang akan membobol, mencuri, atau menghapus seluruh basis data aplikasi Anda',
+            'Membuat ukuran repositori git menjadi terlalu berat untuk di-download',
+            'Menghapus format markdown di README',
+            'Mengubah bahasa pemrograman Node.js menjadi Python'
           ],
-          correct: 1,
-          explanation: 'Foreign Key mencegah terjadinya data tidak konsisten, seperti data KRS yang merujuk pada NIM yang tidak terdaftar dalam tabel mahasiswa.'
+          correct: 0,
+          explanation: 'Kredensial database di repository publik adalah penyebab insiden keamanan siber paling umum. Kredensial wajib disimpan di Environment Variables server hosting.'
         }
       ]
     },
     assignment: {
       id: 'asg_14',
-      title: 'Pengumpulan Proyek Akhir & Laporan Teknis',
+      title: 'Pengumpulan Proyek Akhir Fullstack CRUD & Laporan Teknis',
       deadline: '27 Desember 2026',
-      instructions: 'Kumpulkan berkas proyek akhir yang berisi: 1) Berkas script SQL (DDL, DML, Stored Procedure, Trigger), 2) Tautan repositori GitHub aplikasi, 3) Dokumen laporan teknis PDF (ERD, kamus data, dan tangkapan layar demo aplikasi).'
+      instructions: 'Kumpulkan tautan repositori GitHub dan tautan URL aplikasi yang sudah ter-deploy live. Sertakan berkas skema SQL (DDL + dummy data), dokumentasi endpoint API (Markdown/Postman), dan tangkapan layar demo operasi CRUD.'
     }
   }
 ];
